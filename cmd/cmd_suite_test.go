@@ -48,7 +48,9 @@ func writeBin(bin []byte) (string, func()) {
 		Fail("unable to write bin to temp file")
 	}
 
-	os.Chmod(f.Name(), 0777)
+	if err := os.Chmod(f.Name(), 0777); err != nil {
+        Fail("Fail to change file mode")
+    }
 
 	return f.Name(), func() {
 		err := os.Remove(f.Name())
