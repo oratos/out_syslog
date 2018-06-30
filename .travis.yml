@@ -9,7 +9,6 @@ language: go
 # with them.
 go:
   - 1.9.x
-  - 1.x
 
 # Only clone the most recent commit.
 git:
@@ -30,7 +29,7 @@ notifications:
 # ...and adding this to your Gopkg.toml file.
 #   required = ["github.com/golangci/golangci-lint/cmd/golangci-lint"]
 before_script:
-  - go install ./vendor/github.com/golangci/golangci-lint/cmd/golangci-lint
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $GOPATH/bin v1.8.1
 
 # script always runs to completion (set +e). If we have linter issues AND a
 # failing test, we want to see both. Configure golangci-lint with a
