@@ -4,7 +4,7 @@
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 15:37:25>
+## Updated: Time-stamp: <2018-07-02 15:43:29>
 ##-------------------------------------------------------------------
 function build_code {
     cd ..
@@ -22,7 +22,7 @@ function run_container_build() {
 
     echo "Run container(go-build) to build the code"
     docker run -rm -t -d -h go-build --name go-build \
-           -v ${PWD}/cmd:/go/cmd -v ${PWD}/pkg:/go/pkg \
-           -v ${PWD}/tests:/go/tests \
+           -v "${PWD}/cmd:/go/cmd" -v "${PWD}/pkg:/go/pkg" \
+           -v "${PWD}/tests:/go/tests" \
            --entrypoint=/go/tests/build_code.sh golang:1.10.3
 }
