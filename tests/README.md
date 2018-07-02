@@ -6,7 +6,7 @@ Install docker-compose locally
 cd out_syslog/tests
 
 # build code by spining up a temporary docker container
-build_code.sh
+./build_code.sh
 
 # start process
 docker-compose up -d

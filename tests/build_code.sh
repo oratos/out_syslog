@@ -4,25 +4,40 @@
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 15:43:29>
+## Updated: Time-stamp: <2018-07-02 16:46:31>
 ##-------------------------------------------------------------------
 function build_code {
     cd ..
-    echo "go get out_syslog"
     go get -d github.com/oratos/out_syslog/...
-    echo "go build tests/out_syslog.so"
-    go build -buildmode c-shared -o tests/out_syslog.so github.com/oratos/out_syslog/cmd    
+    go build -buildmode c-shared -o tests/out_syslog.so github.com/oratos/out_syslog/cmd
 }
 
-function run_container_build() {
+function run_container {
+    local container_name="go-build"
     cd ..
     # Base Image: https://hub.docker.com/r/library/golang/
-    # TODO: improve this
-    docker stop go-build; docker rm go-build
+    if docker ps | grep "$container_name" >/dev/null 2>&1; then
+        echo "Delete existing container: $container_name"
+        docker stop "$container_name" || docker stop "$container_name" || true
+        docker rm "$container_name"
+    fi
 
-    echo "Run container(go-build) to build the code"
-    docker run -rm -t -d -h go-build --name go-build \
+    echo "Run container($container_name) to build the code"
+    docker run --rm -t -d -h "$container_name" --name "$container_name" \
            -v "${PWD}/cmd:/go/cmd" -v "${PWD}/pkg:/go/pkg" \
            -v "${PWD}/tests:/go/tests" \
-           --entrypoint=/go/tests/build_code.sh golang:1.10.3
+           golang:1.10.3 bash -c "/go/tests/build_code.sh build_code"
+
+    echo "To check status, run: docker logs $container_name"
 }
+
+action=${1:-run_container}
+
+set -xe
+if  [ "$action" = "build_code" ]; then
+    build_code
+    # avoid quit the container, thus people can login and debug
+    tail -f /dev/null
+else
+    run_container
+fi
