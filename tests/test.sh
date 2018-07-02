@@ -4,10 +4,11 @@
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 15:37:36>
+## Updated: Time-stamp: <2018-07-02 15:42:49>
 ##-------------------------------------------------------------------
+# shellcheck disable=SC1091
+source library.sh
 set -e
-. library.sh
 
 function test_golangci_lint() {
     go get "github.com/onsi/ginkgo"
