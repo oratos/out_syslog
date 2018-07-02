@@ -1,14 +1,12 @@
-Test the functionality in docker-compose
-
-# How to test
+# How to run function test via docker-compose
 
 Install docker-compose locally
 
 ```
 cd out_syslog/tests
 
-# build docker image, if you have code changes
-docker-compose build
+# build code by spining up a temporary docker container
+build_code.sh
 
 # start process
 docker-compose up -d
@@ -21,8 +19,8 @@ In the container of syslog-server, we're supposed to see some log
 ```
 docker logs syslog-server
 ```
-=======
-# How To Test
+
+# How to run lint check
 
 ```
 # get the code

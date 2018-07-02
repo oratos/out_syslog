@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-##-------------------------------------------------------------------
-## File: test.sh
+## File: build_code.sh
 ## Author : Denny <zdenny@vmware.com>
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 15:34:15>
+## Updated: Time-stamp: <2018-07-02 15:37:25>
 ##-------------------------------------------------------------------
 function build_code {
     cd ..
@@ -27,5 +26,3 @@ function run_container_build() {
            -v ${PWD}/tests:/go/tests \
            --entrypoint=/go/tests/build_code.sh golang:1.10.3
 }
-################################################################################
-## File: build_code.sh ends

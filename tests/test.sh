@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-##-------------------------------------------------------------------
 ## File: test.sh
 ## Author : Denny <zdenny@vmware.com>
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 11:44:03>
+## Updated: Time-stamp: <2018-07-02 15:37:36>
 ##-------------------------------------------------------------------
 set -e
 . library.sh
@@ -27,4 +26,3 @@ test_golangci_lint
 
 # TODO: Add more tests like below
 # go test -v -race ./...
-## File: test.sh ends
