@@ -6,6 +6,11 @@ Install docker-compose locally
 
 ```
 cd out_syslog/tests
+
+# build docker image, if you have code changes
+docker-compose build
+
+# start process
 docker-compose up -d
 
 docker-compose ps
