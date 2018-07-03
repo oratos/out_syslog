@@ -4,11 +4,14 @@
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 17:38:55>
+## Updated: Time-stamp: <2018-07-02 17:53:44>
 ##-------------------------------------------------------------------
 function build_code {
+    echo "go get dependency"
     go get github.com/fluent/fluent-bit-go/output
-    go get -d ...
+    go get github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog
+    
+    echo "go build local code directory"
     go build -buildmode c-shared -o tests/out_syslog.so ./cmd
 }
 
