@@ -2,11 +2,12 @@ package main_test
 
 import (
 	"bufio"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
+	"path"
+	"runtime"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -21,18 +22,21 @@ var _ = Describe("Syslog Output Plugin", func() {
 		defer cleanup()
 		spyDrain := newSpyDrain()
 		defer spyDrain.stop()
-		configPath, cleanup := writeConf(logPath, spyDrain.url())
-		defer cleanup()
 
 		cmd := exec.Command(
 			"docker",
 			"run",
 			"--network", "host",
-			"-v", "/tmp:/tmp",
+			"--volume", path.Dir(pluginPath)+":/plugin",
+			"--volume", path.Dir(logPath)+":/input",
 			"fluent/fluent-bit:0.13.4",
 			"/fluent-bit/bin/fluent-bit",
-			"-e", pluginPath,
-			"-c", configPath,
+			"--flush", "1",
+			"--plugin", path.Join("/plugin", path.Base(pluginPath)),
+			"--input", "tail",
+			"--prop", "Path="+path.Join("/input", path.Base(logPath)),
+			"--output", "syslog",
+			"--prop", "Addr="+spyDrain.url(),
 		)
 		sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
@@ -57,7 +61,10 @@ var _ = Describe("Syslog Output Plugin", func() {
 })
 
 func writeLog(msgs []string) (string, func()) {
-	f, err := ioutil.TempFile("", "")
+	tmpDir, err := ioutil.TempDir("/tmp", "")
+	Expect(err).ToNot(HaveOccurred())
+
+	f, err := ioutil.TempFile(tmpDir, "")
 	Expect(err).ToNot(HaveOccurred())
 	defer f.Close()
 
@@ -70,36 +77,7 @@ func writeLog(msgs []string) (string, func()) {
 	}
 
 	return f.Name(), func() {
-		err := os.Remove(f.Name())
-		Expect(err).ToNot(HaveOccurred())
-	}
-}
-
-func writeConf(logPath, addr string) (string, func()) {
-	f, err := ioutil.TempFile("", "")
-	Expect(err).ToNot(HaveOccurred())
-
-	conf := []byte(fmt.Sprintf(`
-[SERVICE]
-    Flush  1
-
-[INPUT]
-    Name tail
-    Path %s
-
-[OUTPUT]
-    Name syslog
-    Addr %s
-    Match *
-`, logPath, addr))
-	n, err := f.Write(conf)
-	Expect(err).ToNot(HaveOccurred())
-	if n != len(conf) {
-		Fail("unable to write conf to temp file")
-	}
-
-	return f.Name(), func() {
-		err := os.Remove(f.Name())
+		err := os.RemoveAll(tmpDir)
 		Expect(err).ToNot(HaveOccurred())
 	}
 }
@@ -109,7 +87,7 @@ type spyDrain struct {
 }
 
 func newSpyDrain(addr ...string) *spyDrain {
-	a := ":0"
+	a := "localhost:0"
 	if len(addr) != 0 {
 		a = addr[0]
 	}
@@ -122,6 +100,11 @@ func newSpyDrain(addr ...string) *spyDrain {
 }
 
 func (s *spyDrain) url() string {
+	if runtime.GOOS == "darwin" {
+		_, port, err := net.SplitHostPort(s.lis.Addr().String())
+		Expect(err).ToNot(HaveOccurred())
+		return "host.docker.internal:" + port
+	}
 	return s.lis.Addr().String()
 }
 

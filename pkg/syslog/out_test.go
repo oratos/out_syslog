@@ -78,7 +78,7 @@ var _ = Describe("Out", func() {
 		go func() {
 			defer GinkgoRecover()
 			defer close(done)
-			spyDrain.lis.Accept()
+			_, _ = spyDrain.lis.Accept()
 		}()
 		Consistently(done).ShouldNot(BeClosed())
 	})
@@ -138,7 +138,7 @@ func (s *spyDrain) url() string {
 }
 
 func (s *spyDrain) stop() {
-	s.lis.Close()
+	_ = s.lis.Close()
 }
 
 func (s *spyDrain) accept() net.Conn {
@@ -149,7 +149,9 @@ func (s *spyDrain) accept() net.Conn {
 
 func (s *spyDrain) expectReceived(msgs ...string) {
 	conn := s.accept()
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	buf := bufio.NewReader(conn)
 
 	for _, expected := range msgs {
