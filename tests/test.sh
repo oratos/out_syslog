@@ -4,7 +4,7 @@
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 18:37:40>
+## Updated: Time-stamp: <2018-07-02 23:17:31>
 ##-------------------------------------------------------------------
 set -e
 function log {
@@ -30,13 +30,13 @@ function shell_exit {
 trap shell_exit SIGHUP SIGINT SIGTERM 0
 
 ################################################################################
-log "Build the code"
+log "Build golang code"
 ./build_code.sh
 
 # TODO: better logic for code slow build issue
 sleep 5
 
-log "Start docker-compose env"
+log "Run: docker-compose up -d"
 docker-compose up -d
 
 # TODO: better logic for fluent-bit delay

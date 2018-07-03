@@ -4,8 +4,9 @@
 ## Description :
 ## --
 ## Created : <2018-07-02>
-## Updated: Time-stamp: <2018-07-02 17:53:44>
+## Updated: Time-stamp: <2018-07-02 23:16:00>
 ##-------------------------------------------------------------------
+set -e
 function build_code {
     echo "go get dependency"
     go get github.com/fluent/fluent-bit-go/output
@@ -36,7 +37,6 @@ function run_container {
 
 action=${1:-run_container}
 
-set -xe
 if  [ "$action" = "build_code" ]; then
     build_code
     # avoid quit the container, thus people can login and debug

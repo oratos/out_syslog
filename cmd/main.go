@@ -23,7 +23,7 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 //export FLBPluginInit
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	addr := output.FLBPluginConfigKey(ctx, "addr")
-	fmt.Printf("[out_syslog] denny addr = '%s'\n", addr)
+	fmt.Printf("[out_syslog] addr = '%s'\n", addr)
 	out = syslog.NewOut(addr)
 	return output.FLB_OK
 }
