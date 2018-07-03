@@ -1,6 +1,12 @@
-# How to run function test via docker-compose
+# Run test with one command
+Make sure docker-compose has been installed in your env.
 
-Install docker-compose locally
+```
+cd fluent-bit-out-syslog/tests
+./test.sh
+```
+
+# Run test in a hard way
 
 Since fluent-bit haven't been fully tested in mac, we start a container to build the go plugin.
 

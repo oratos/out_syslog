@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"unsafe"
-
 	"C"
 
 	"github.com/fluent/fluent-bit-go/output"
@@ -24,7 +23,7 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 //export FLBPluginInit
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	addr := output.FLBPluginConfigKey(ctx, "addr")
-	fmt.Printf("[out_syslog] addr = '%s'\n", addr)
+	fmt.Printf("[out_syslog] denny addr = '%s'\n", addr)
 	out = syslog.NewOut(addr)
 	return output.FLB_OK
 }
@@ -53,6 +52,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		err := out.Write(convert(record), timestamp, C.GoString(tag))
 		if err != nil {
 			// TODO: switch over to FLB_RETRY when we are capable of retrying
+			fmt.Println("Error:", err)
 			return output.FLB_ERROR
 		}
 	}
