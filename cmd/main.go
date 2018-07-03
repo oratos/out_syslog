@@ -1,15 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"unsafe"
 	"C"
+
+	"log"
 
 	"github.com/fluent/fluent-bit-go/output"
 	"github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog"
 )
 
 var out *syslog.Out
+
+var failed_write_cnt int
 
 //export FLBPluginRegister
 func FLBPluginRegister(ctx unsafe.Pointer) int {
@@ -23,7 +26,7 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 //export FLBPluginInit
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	addr := output.FLBPluginConfigKey(ctx, "addr")
-	fmt.Printf("[out_syslog] addr = '%s'\n", addr)
+	log.Println("[out_syslog] addr = ", addr)
 	out = syslog.NewOut(addr)
 	return output.FLB_OK
 }
@@ -52,7 +55,12 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		err := out.Write(convert(record), timestamp, C.GoString(tag))
 		if err != nil {
 			// TODO: switch over to FLB_RETRY when we are capable of retrying
-			fmt.Println("Error:", err)
+			failed_write_cnt++
+			if failed_write_cnt % 1000 == 0 {
+				// For security concern, we log this for every 1000 records
+				log.Println("Error Unable to write to syslog:", err,
+					". Current failed write count: ", failed_write_cnt)
+			}
 			return output.FLB_ERROR
 		}
 	}

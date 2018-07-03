@@ -1,4 +1,4 @@
-*_flymake.sh
+*_flymake*
 tests/out_syslog.h
 tests/out_syslog.so
-pkg/linux_amd64/
+wait-for.sh

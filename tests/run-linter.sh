@@ -5,6 +5,10 @@ function log {
     local msg=$*
     date_timestamp=$(date +['%Y-%m-%d %H:%M:%S'])
     echo -ne "$date_timestamp $msg\\n"
+
+    if [ -n "$LOG_FILE" ]; then
+        echo -ne "$date_timestamp $msg\\n" >> "$LOG_FILE"
+    fi
 }
 
 function install_golangci_lint {

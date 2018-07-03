@@ -15,7 +15,7 @@ Then mount the output file(out_syslog.so) to our docker-compose env for testing
 cd out_syslog/tests
 
 # build code by spining up a temporary docker container, which will generate out_syslog.so
-./build_code.sh
+./build-code.sh
 
 # Docker-compose will mount out_syslog.so to fluent-bit container
 # start process

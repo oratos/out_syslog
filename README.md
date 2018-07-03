@@ -20,5 +20,5 @@ fluent-bit \
 
 **Run Linter:**
 ```
-./scripts/run-linter.sh
+./tests/run-linter.sh
 ```
