@@ -28,7 +28,7 @@ var _ = AfterSuite(func() {
 
 func buildPlugin() (string, func()) {
 	path, err := gexec.Build(
-		"github.com/oratos/out_syslog/cmd",
+		"github.com/pivotal-cf/fluent-bit-out-syslog/cmd",
 		"-buildmode", "c-shared",
 	)
 	Expect(err).ToNot(HaveOccurred())

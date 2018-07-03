@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/oratos/out_syslog/pkg/syslog"
+	"github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog"
 )
 
 var _ = Describe("Out", func() {

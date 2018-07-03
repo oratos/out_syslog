@@ -3,11 +3,10 @@ package main
 import (
 	"fmt"
 	"unsafe"
-
 	"C"
 
 	"github.com/fluent/fluent-bit-go/output"
-	"github.com/oratos/out_syslog/pkg/syslog"
+	"github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog"
 )
 
 var out *syslog.Out
@@ -53,6 +52,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		err := out.Write(convert(record), timestamp, C.GoString(tag))
 		if err != nil {
 			// TODO: switch over to FLB_RETRY when we are capable of retrying
+			fmt.Println("Error:", err)
 			return output.FLB_ERROR
 		}
 	}
