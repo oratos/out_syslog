@@ -1,3 +1,4 @@
 *_flymake.sh
 tests/out_syslog.h
 tests/out_syslog.so
+pkg/linux_amd64/

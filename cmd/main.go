@@ -7,7 +7,7 @@ import (
 	"C"
 
 	"github.com/fluent/fluent-bit-go/output"
-	"github.com/oratos/out_syslog/pkg/syslog"
+	"github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog"
 )
 
 var out *syslog.Out
