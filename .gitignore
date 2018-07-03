@@ -1,4 +1,3 @@
 *_flymake*
 tests/out_syslog.h
 tests/out_syslog.so
-wait-for.sh
