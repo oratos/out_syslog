@@ -6,9 +6,7 @@ services:
     # Run code build to get latest out_syslog.so: ./build_code.sh
     command: /fluent-bit/bin/fluent-bit --plugin /fluent-bit/bin/out_syslog.so --config /fluent-bit/etc/fluent-bit.conf -i dummy -o syslog --prop Addr=syslog:12345 -f 1
     volumes:
-      ${PWD}/out_sys.so:/fluent-bit/bin/out_syslog.so
-    depends_on:
-      - go-build
+      - ${PWD}/out_syslog.so:/fluent-bit/bin/out_syslog.so
   syslog:
     container_name: "syslog-server"
     # Docker image: https://github.com/jasonkeene/tcp-to-stdout
