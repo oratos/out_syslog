@@ -7,6 +7,10 @@ function log {
 }
 
 function build_code {
+    if [ -f out_syslog.so ]; then
+        log "Remove old out_syslog.so"
+        rm -rf out_syslog.so
+    fi
     log "go get dependency"
     go get -d -t github.com/fluent/fluent-bit-go/output
     go get -d -t code.cloudfoundry.org/rfc5424

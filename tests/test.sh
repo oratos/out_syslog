@@ -38,11 +38,10 @@ trap shell_exit SIGHUP SIGINT SIGTERM 0
 echo "Note: The whole test would take 40 seconds on average"
 
 log "Build golang code"
-[ ! -f out_syslog.so ] || rm -rf out_syslog.so
 ./build-code.sh
 
 log "Wait for code build, which might take tens of seconds"
-wait_for "test -f out_syslog.so" 30
+wait_for "test -f out_syslog.so" 50
 
 log "Run: docker-compose down"
 docker-compose down
