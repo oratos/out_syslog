@@ -66,7 +66,8 @@ func buildPlugin() (string, func()) {
 	)
 	sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
-	sess.Wait(5 * time.Minute)
+	sess.Wait(2 * time.Minute)
+	Eventually(sess).Should(gexec.Exit(0))
 
 	return path.Join(tmpPath, "out_syslog.so"), func() {
 		err := os.RemoveAll(tmpPath)
