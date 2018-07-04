@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path"
 	"runtime"
-	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -125,9 +124,7 @@ func (s *spyDrain) expectReceivedMsgs(msgs ...string) {
 
 	for _, expected := range msgs {
 		actual, err := buf.ReadString('\n')
-		l := strings.Split(actual, " ")
-		actual = strings.Join(l[3:], " ")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(actual).To(Equal(`- - - - - ` + expected + "\n"))
+		Expect(actual).To(ContainSubstring("- - - - - " + expected))
 	}
 }
