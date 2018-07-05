@@ -25,6 +25,8 @@ function build_code {
     if [ ! -d "$GOPATH/src/github.com/fluent/fluent-bit-go" ]; then
         log "go get dependency"
         go get -d -t ./ ...
+    else
+        log "Avoid go get dependencies, since fluent-bit-go package is already detected"
     fi
     
     log "go build local code directory"

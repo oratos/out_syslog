@@ -41,7 +41,7 @@ log "Build golang code"
 ./build-code.sh
 
 log "Wait for code build, which might take tens of seconds"
-wait_for "test -f out_syslog.so" 50
+wait_for "test -f out_syslog.so" 300
 
 log "Run: docker-compose down"
 docker-compose down
