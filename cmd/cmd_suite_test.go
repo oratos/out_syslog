@@ -62,7 +62,7 @@ func buildPlugin() (string, func()) {
 		"build",
 		"-buildmode", "c-shared",
 		"-o", "/output/out_syslog.so",
-		"github.com/oratos/out_syslog/cmd",
+		"github.com/pivotal-cf/fluent-bit-out-syslog/cmd",
 	)
 	sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
