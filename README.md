@@ -12,13 +12,15 @@ cd src/github.com/pivotal-cf
 git clone git@github.com:pivotal-cf/fluent-bit-out-syslog.git
 
 # get dependencies
-cd fluent-bit-out-syslog/cmd
-go get -d -t ./ ...
+cd $GOPATH/src
+go get -d -t github.com/pivotal-cf/fluent-bit-out-syslog/cmd ...
 
 # run code build
-go build -buildmode c-shared -o out_syslog.so github.com/pivotal-cf/fluent-bit-out-syslog/cmd
+cd $GOPATH/src/github.com/pivotal-cf/fluent-bit-out-syslog/cmd
+go build -buildmode c-shared -o out_syslog.so .
 
 # run test
+cd $GOPATH/src/github.com/pivotal-cf/fluent-bit-out-syslog/cmd
 go test -v
 ```
 
