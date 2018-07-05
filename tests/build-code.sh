@@ -22,7 +22,6 @@ function build_code {
 function run_container {
     local container_name="go-build"
     cd ..
-    # Base Image: https://hub.docker.com/r/library/golang/
     if docker ps -a | grep "$container_name" >/dev/null 2>&1; then
         log "Delete existing container: $container_name"
         docker stop "$container_name" || docker stop "$container_name" || true

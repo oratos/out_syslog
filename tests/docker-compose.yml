@@ -10,7 +10,6 @@ services:
       - ${PWD}/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
   syslog-server:
     container_name: "syslog-server"
-    # Docker image: https://github.com/jasonkeene/tcp-to-stdout
     image: jasonkeene/tcp-to-stdout
     ports:
       - "12345:12345"
