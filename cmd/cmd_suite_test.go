@@ -66,7 +66,9 @@ func buildPlugin() (string, func()) {
 	)
 	sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
+	// The code build takes no more than 1 minute, but docker pull might take time
 	sess.Wait(5 * time.Minute)
+	Eventually(sess).Should(gexec.Exit(0))
 
 	return path.Join(tmpPath, "out_syslog.so"), func() {
 		err := os.RemoveAll(tmpPath)
