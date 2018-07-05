@@ -12,8 +12,6 @@ import (
 
 var out *syslog.Out
 
-var failed_write_cnt int
-
 //export FLBPluginRegister
 func FLBPluginRegister(ctx unsafe.Pointer) int {
 	return output.FLBPluginRegister(
@@ -55,12 +53,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		err := out.Write(convert(record), timestamp, C.GoString(tag))
 		if err != nil {
 			// TODO: switch over to FLB_RETRY when we are capable of retrying
-			failed_write_cnt++
-			if failed_write_cnt % 1000 == 0 {
-				// For security concern, we log this for every 1000 records
-				log.Println("Error Unable to write to syslog:", err,
-					". Current failed write count: ", failed_write_cnt)
-			}
+			// TODO: how we know the flush keeps running issues.
 			return output.FLB_ERROR
 		}
 	}
