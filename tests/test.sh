@@ -35,6 +35,7 @@ function shell_exit {
 
 trap shell_exit SIGHUP SIGINT SIGTERM 0
 ################################################################################
+cd "$(dirname "$0")"
 echo "Note: The whole test would take 40 seconds on average"
 
 log "Build golang code"
