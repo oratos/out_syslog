@@ -18,13 +18,33 @@ var _ = Describe("Out", func() {
 		out := syslog.NewOut(spyDrain.url())
 		record := map[string]string{
 			"log": "some-log-message",
+			// TODO: Add namespace_name ns1 record value
+		}
+		err := out.Write(record, time.Unix(0, 0).UTC(), "")
+		Expect(err).ToNot(HaveOccurred())
+
+		spyDrain.expectReceived(
+			`69 <14>1 1970-01-01T00:00:00+00:00 - - - - [tags@47450 namespace="ns1"] `+"\n",
+		)
+	})
+
+	It("writes kubernetes metadata as syslog structured data to message", func(){
+		spyDrain := newSpyDrain()
+		defer spyDrain.stop()
+
+		out := syslog.NewOut(spyDrain.url())
+		record := map[string]string{
+			"log": "some-log-message",
+			"kubernetes":
 		}
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 
 		spyDrain.expectReceived(
 			`59 <14>1 1970-01-01T00:00:00+00:00 - - - - - some-log-message` + "\n",
+			`69 <14>1 1970-01-01T00:00:00+00:00 - - - - [tags@47450 namespace="ns1"] `+"\n",
 		)
+
 	})
 
 	It("returns an error when unable to write the message", func() {
