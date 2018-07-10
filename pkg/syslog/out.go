@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"net"
 	"time"
+	"fmt"
+	"encoding/json"
 
 	"code.cloudfoundry.org/rfc5424"
 )
@@ -57,10 +59,27 @@ func convert(
 	ts time.Time,
 	tag string,
 ) *rfc5424.Message {
+	_, ok := record["kubernetes"]
+
+	msg := ""
+	if ok == false {
+		msg = record["log"]
+	} else {
+		// TODO: Should we use json output, instead of plain text?
+		// TODO: get the nested map
+		k8sMap := make(map[string]string)
+		err := json.Unmarshal([]byte(record["kubernetes"]), &k8sMap)
+		if err != nil {
+			panic(err)
+		}
+
+		msg = fmt.Sprintf("Msg: %s, ContainerInstance: %s, Pod: %s, Namespace: %s, APIHostName: %s", 
+			record["log"], record["container_name"], k8sMap["pod_name"], k8sMap["namespace_name"], record["host"])
+	}
 	return &rfc5424.Message{
 		Priority:  rfc5424.Info + rfc5424.User,
 		Timestamp: ts,
-		Message:   appendNewline([]byte(record["log"])),
+		Message:   appendNewline([]byte(msg)),
 	}
 }
 

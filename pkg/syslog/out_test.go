@@ -24,7 +24,7 @@ var _ = Describe("Out", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		spyDrain.expectReceived(
-			`69 <14>1 1970-01-01T00:00:00+00:00 - - - - [tags@47450 namespace="ns1"] `+"\n",
+			`59 <14>1 1970-01-01T00:00:00+00:00 - - - - - some-log-message` + "\n",
 		)
 	})
 
@@ -34,17 +34,19 @@ var _ = Describe("Out", func() {
 
 		out := syslog.NewOut(spyDrain.url())
 		record := map[string]string{
-			"log": "some-log-message",
-			"kubernetes":
+			"log": "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add",
+			"stream":"stderr", "time":"2018-07-09T05:17:23.054249066Z",
+			"kubernetes":"{\"pod_name\":\"etcd-minikube\", \"namespace_name\":\"kube-system\"}",
+			"host":"minikube",
+			"container_name":"etcd",
+			"docker_id":"3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c",
 		}
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 
 		spyDrain.expectReceived(
-			`59 <14>1 1970-01-01T00:00:00+00:00 - - - - - some-log-message` + "\n",
-			`69 <14>1 1970-01-01T00:00:00+00:00 - - - - [tags@47450 namespace="ns1"] `+"\n",
+			`199 <14>1 1970-01-01T00:00:00+00:00 - - - - - Msg: 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add, ContainerInstance: etcd, Pod: etcd-minikube, Namespace: kube-system, APIHostName: minikube` + "\n",
 		)
-
 	})
 
 	It("returns an error when unable to write the message", func() {
@@ -53,7 +55,6 @@ var _ = Describe("Out", func() {
 		spyDrain.stop()
 
 		err := out.Write(map[string]string{}, time.Unix(0, 0).UTC(), "")
-
 		Expect(err).To(HaveOccurred())
 	})
 
