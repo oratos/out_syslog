@@ -79,6 +79,7 @@ func convert(in map[interface{}]interface{}) map[string]string {
 		case []byte:
 			out[key] = string(value)
 		default:
+			// TODO: need log the unexpected case somehow
 		}
 	}
 	return out
