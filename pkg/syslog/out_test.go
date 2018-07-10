@@ -56,6 +56,15 @@ var _ = Describe("Out", func() {
 
 		err := out.Write(map[string]string{}, time.Unix(0, 0).UTC(), "")
 		Expect(err).To(HaveOccurred())
+
+		record := map[string]string{
+			"log": "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add",
+			"kubernetes":"{\"pod_name\":\"etcd-minikube\"}",
+			"host":"minikube",
+			"docker_id":"3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c",
+		}
+		err = out.Write(record, time.Unix(0, 0).UTC(), "")
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("eventually connects to a failing syslog drain", func() {
