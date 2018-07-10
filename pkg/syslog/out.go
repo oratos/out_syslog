@@ -59,9 +59,8 @@ func convert(
 	ts time.Time,
 	tag string,
 ) *rfc5424.Message {
-	_, ok := record["kubernetes"]
-
 	msg := ""
+	_, ok := record["kubernetes"]
 	if ok == false {
 		msg = record["log"]
 	} else {
@@ -71,9 +70,9 @@ func convert(
 		if err != nil {
 			panic(err)
 		}
-		msg = fmt.Sprintf("Msg: %s, ContainerInstance: %s, Pod: %s, Namespace: %s, APIHostName: %s",
-			record["log"], record["container_name"], k8sMap["pod_name"], 
-			k8sMap["namespace_name"], record["host"])
+		msg = fmt.Sprintf("ContainerInstance: %s, Pod: %s, Namespace: %s, APIHostName: %s, Msg: %s",
+			record["container_name"], k8sMap["pod_name"],
+			k8sMap["namespace_name"], record["host"], record["log"])
 	}
 	return &rfc5424.Message{
 		Priority:  rfc5424.Info + rfc5424.User,

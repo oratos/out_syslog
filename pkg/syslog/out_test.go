@@ -45,7 +45,7 @@ var _ = Describe("Out", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		spyDrain.expectReceived(
-			`199 <14>1 1970-01-01T00:00:00+00:00 - - - - - Msg: 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add, ContainerInstance: etcd, Pod: etcd-minikube, Namespace: kube-system, APIHostName: minikube` + "\n",
+			`199 <14>1 1970-01-01T00:00:00+00:00 - - - - - ContainerInstance: etcd, Pod: etcd-minikube, Namespace: kube-system, APIHostName: minikube, Msg: 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add` + "\n",
 		)
 	})
 
