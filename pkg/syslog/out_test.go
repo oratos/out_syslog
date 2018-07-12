@@ -45,7 +45,7 @@ var _ = Describe("Out", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		spyDrain.expectReceived(
-			`150 <14>1 1970-01-01T00:00:00+00:00 minikube etcd - - - Namespace: kube-system | Pod Name:  | 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add` + "\n",
+			`129 <14>1 1970-01-01T00:00:00+00:00 minikube kube-system/pod//etcd - - - 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add` + "\n",
 		)
 	})
 
@@ -54,21 +54,9 @@ var _ = Describe("Out", func() {
 		out := syslog.NewOut(spyDrain.url())
 		spyDrain.stop()
 
-		record1 := make(map[interface{}]interface{})
-		record1[""] = ""
-		err := out.Write(record1, time.Unix(0, 0).UTC(), "")
-		Expect(err).To(HaveOccurred())
-
-		record2 := make(map[interface{}]interface{})
-		record2["log"] = []byte("2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add")
-		record2["stream"] = "stderr"
-		record2["time"] = "2018-07-09T05:17:23.054249066Z"
-		record2["kubernetes"] = map[string]int{"namespace_name":1234}
-		record2["host"] = "minikube"
-		record2["container_name"] = "etcd"
-		record2["docker_id"] = "3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c"
-
-		err = out.Write(record2, time.Unix(0, 0).UTC(), "")
+		record := make(map[interface{}]interface{})
+		record[""] = ""
+		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).To(HaveOccurred())
 	})
 

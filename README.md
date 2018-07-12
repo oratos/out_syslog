@@ -1,5 +1,12 @@
+Table of Contents
+=================
 
-## Fluent Bit Syslog Output Plugin
+   * [Fluent Bit Syslog Output Plugin](#fluent-bit-syslog-output-plugin)
+      * [How To Run In Local laptop](#how-to-run-in-local-laptop)
+      * [How To Run In minikube](#how-to-run-in-minikube)
+      * [How To Run Linter](#how-to-run-linter)
+
+# Fluent Bit Syslog Output Plugin
 
 **How to Test:**
 
@@ -30,7 +37,7 @@ cd $GOPATH/src/github.com/pivotal-cf/fluent-bit-out-syslog/
 ./tests/test.sh
 ```
 
-**How to Run In Local laptop:**
+## How To Run In Local laptop
 
 ```
 fluent-bit \
@@ -40,7 +47,11 @@ fluent-bit \
     --prop Addr=localhost:12345
 ```
 
-**Run Linter:**
+## How To Run In minikube
+
+[tests/fluent-bit-kubernetes/README.md](tests/fluent-bit-kubernetes/README.md)
+
+## How To Run Linter
 ```
 ./tests/run-linter.sh
 ```

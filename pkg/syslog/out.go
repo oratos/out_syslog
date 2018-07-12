@@ -58,34 +58,46 @@ func convert(
 	ts time.Time,
 	tag string,
 ) *rfc5424.Message {
-	var log_msg []byte
+	var logmsg []byte
 	var hostname, appname string
-	var podname string
+	var podname, containername string
 	var k8sMap map[string]string
+
+	// TODO: avoid unstable assumption for the data type
 	for k, v := range record {
 		key, ok := k.(string)
 		if !ok { continue }
 
 		switch key {
 		case "log":
-			log_msg = v.([]byte)
+			v2, ok2 := v.([]byte)
+			if !ok2 { continue }
+			logmsg = v2
 		case "host":
-			hostname = v.(string)
+			v2, ok2 := v.(string)
+			if !ok2 { continue }
+			hostname = v2
 		case "container_name":
-			appname = v.(string)
+			v2, ok2 := v.(string)
+			if !ok2 { continue }
+			containername = v2
 		case "pod_name":
-			podname = v.(string)
+			v2, ok2 := v.(string)
+			if !ok2 { continue }
+			podname = v2
 		case "kubernetes":
-			k8sMap = v.(map[string]string)
+			v2, ok2 := v.(map[string]string)
+			if !ok2 { continue }
+			k8sMap = v2
 		}
 	}
 	if len(k8sMap) != 0 {
-		log_msg = []byte(fmt.Sprintf("Namespace: %s | Pod Name: %s | %s", 
-			k8sMap["namespace_name"], podname, string(log_msg)))
+		// sample: kube-system/pod/kube-dns-86f4d74b45-lfgj7/dnsmasq
+		appname = fmt.Sprintf("%s/%s/%s/%s", k8sMap["namespace_name"], "pod", podname, containername)
 	}
 
-	if !bytes.HasSuffix(log_msg, []byte("\n")) {
-		log_msg = append(log_msg, byte('\n'))
+	if !bytes.HasSuffix(logmsg, []byte("\n")) {
+		logmsg = append(logmsg, byte('\n'))
 	}
 
 	return &rfc5424.Message{
@@ -93,6 +105,6 @@ func convert(
 		Timestamp: ts,
 		Hostname:  hostname,
 		AppName:   appname,
-		Message:   log_msg,
+		Message:   logmsg,
 	}
 }
