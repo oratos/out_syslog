@@ -17,8 +17,7 @@ var _ = Describe("Out", func() {
 
 		out := syslog.NewOut(spyDrain.url())
 
-		record := make(map[interface{}]interface{})
-		record["log"] = []byte("some-log-message")
+		record := map[interface{}]interface{}{"log": []byte("some-log-message")}
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 
@@ -54,8 +53,7 @@ var _ = Describe("Out", func() {
 		out := syslog.NewOut(spyDrain.url())
 		spyDrain.stop()
 
-		record := make(map[interface{}]interface{})
-		record[""] = ""
+		record := map[interface{}]interface{}{"": ""}
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).To(HaveOccurred())
 	})
@@ -67,8 +65,7 @@ var _ = Describe("Out", func() {
 
 		spyDrain = newSpyDrain(spyDrain.url())
 
-		record := make(map[interface{}]interface{})
-		record["log"] = []byte("some-log-message")
+		record := map[interface{}]interface{}{"log": []byte("some-log-message")}
 
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -83,8 +80,7 @@ var _ = Describe("Out", func() {
 		defer spyDrain.stop()
 		out := syslog.NewOut(spyDrain.url())
 
-		record := make(map[interface{}]interface{})
-		record["log"] = []byte("some-log-message")
+		record := map[interface{}]interface{}{"log": []byte("some-log-message")}
 
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -108,8 +104,7 @@ var _ = Describe("Out", func() {
 	It("reconnects if previous connection went away", func() {
 		spyDrain := newSpyDrain()
 		out := syslog.NewOut(spyDrain.url())
-		record1 := make(map[interface{}]interface{})
-		record1["log"] = []byte("some-log-message-1")
+		record1 := map[interface{}]interface{}{"log": []byte("some-log-message-1")}
 
 		err := out.Write(record1, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -120,8 +115,7 @@ var _ = Describe("Out", func() {
 		spyDrain.stop()
 		spyDrain = newSpyDrain(spyDrain.url())
 
-		record2 := make(map[interface{}]interface{})
-		record2["log"] = []byte("some-log-message-2")
+		record2 := map[interface{}]interface{}{"log": []byte("some-log-message-2")}
 
 		f := func() error {
 			return out.Write(record2, time.Unix(0, 0).UTC(), "")
