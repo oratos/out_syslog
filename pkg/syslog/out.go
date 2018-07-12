@@ -5,7 +5,6 @@ import (
 	"net"
 	"time"
 	"fmt"
-	"encoding/json"
 
 	"code.cloudfoundry.org/rfc5424"
 )
@@ -27,7 +26,7 @@ func NewOut(addr string) *Out {
 // message and writes it out to the connection. If no connection is
 // established one will be established.
 func (o *Out) Write(
-	record map[string]string,
+	record map[interface{}]interface{},
 	ts time.Time,
 	tag string,
 ) error {
@@ -55,35 +54,45 @@ func (o *Out) maintainConnection() error {
 }
 
 func convert(
-	record map[string]string,
+	record map[interface{}]interface{},
 	ts time.Time,
 	tag string,
 ) *rfc5424.Message {
-	msg := ""
-	_, ok := record["kubernetes"]
-	if ok == false {
-		msg = record["log"]
-	} else {
-		// TODO: Should we use json output, instead of plain text?
-		k8sMap := make(map[string]string)
-		err := json.Unmarshal([]byte(record["kubernetes"]), &k8sMap)
-		if err != nil {
-			panic(err)
+	var log_msg []byte
+	var hostname, appname string
+	var podname string
+	var k8sMap map[string]string
+	for k, v := range record {
+		key, ok := k.(string)
+		if !ok { continue }
+
+		switch key {
+		case "log":
+			log_msg = []byte(v.(string))
+		case "host":
+			hostname = v.(string)
+		case "container_name":
+			appname = v.(string)
+		case "pod_name":
+			podname = v.(string)
+		case "kubernetes":
+			k8sMap = v.(map[string]string)
 		}
-		msg = fmt.Sprintf("ContainerInstance: %s, Pod: %s, Namespace: %s, APIHostName: %s, Msg: %s",
-			record["container_name"], k8sMap["pod_name"],
-			k8sMap["namespace_name"], record["host"], record["log"])
 	}
+	if len(k8sMap) != 0 {
+		log_msg = []byte(fmt.Sprintf("Namespace: %s | Pod Name: %s | %s", 
+			k8sMap["namespace_name"], podname, string(log_msg)))
+	}
+
+	if !bytes.HasSuffix(log_msg, []byte("\n")) {
+		log_msg = append(log_msg, byte('\n'))
+	}
+
 	return &rfc5424.Message{
 		Priority:  rfc5424.Info + rfc5424.User,
 		Timestamp: ts,
-		Message:   appendNewline([]byte(msg)),
+		Hostname:  hostname,
+		AppName:   appname,
+		Message:   log_msg,
 	}
-}
-
-func appendNewline(msg []byte) []byte {
-	if !bytes.HasSuffix(msg, []byte("\n")) {
-		msg = append(msg, byte('\n'))
-	}
-	return msg
 }

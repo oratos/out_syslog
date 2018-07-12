@@ -16,10 +16,9 @@ var _ = Describe("Out", func() {
 		defer spyDrain.stop()
 
 		out := syslog.NewOut(spyDrain.url())
-		record := map[string]string{
-			"log": "some-log-message",
-			// TODO: Add namespace_name ns1 record value
-		}
+
+		record := make(map[interface{}]interface{})
+		record["log"] = "some-log-message"
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 
@@ -33,19 +32,20 @@ var _ = Describe("Out", func() {
 		defer spyDrain.stop()
 
 		out := syslog.NewOut(spyDrain.url())
-		record := map[string]string{
-			"log": "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add",
-			"stream":"stderr", "time":"2018-07-09T05:17:23.054249066Z",
-			"kubernetes":"{\"pod_name\":\"etcd-minikube\", \"namespace_name\":\"kube-system\"}",
-			"host":"minikube",
-			"container_name":"etcd",
-			"docker_id":"3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c",
-		}
+		record := make(map[interface{}]interface{})
+		record["log"] = "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add"
+		record["stream"] = "stderr"
+		record["time"] = "2018-07-09T05:17:23.054249066Z"
+		record["kubernetes"] = map[string]string{"pod_name":"etcd-minikube", "namespace_name":"kube-system"}
+		record["host"] = "minikube"
+		record["container_name"] = "etcd"
+		record["docker_id"] = "3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c"
+
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 
 		spyDrain.expectReceived(
-			`199 <14>1 1970-01-01T00:00:00+00:00 - - - - - ContainerInstance: etcd, Pod: etcd-minikube, Namespace: kube-system, APIHostName: minikube, Msg: 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add` + "\n",
+			`150 <14>1 1970-01-01T00:00:00+00:00 minikube etcd - - - Namespace: kube-system | Pod Name:  | 2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add` + "\n",
 		)
 	})
 
@@ -54,16 +54,21 @@ var _ = Describe("Out", func() {
 		out := syslog.NewOut(spyDrain.url())
 		spyDrain.stop()
 
-		err := out.Write(map[string]string{}, time.Unix(0, 0).UTC(), "")
+		record1 := make(map[interface{}]interface{})
+		record1[""] = ""
+		err := out.Write(record1, time.Unix(0, 0).UTC(), "")
 		Expect(err).To(HaveOccurred())
 
-		record := map[string]string{
-			"log": "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add",
-			"kubernetes":"{\"pod_name\":\"etcd-minikube\"}",
-			"host":"minikube",
-			"docker_id":"3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c",
-		}
-		err = out.Write(record, time.Unix(0, 0).UTC(), "")
+		record2 := make(map[interface{}]interface{})
+		record2["log"] = "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add"
+		record2["stream"] = "stderr"
+		record2["time"] = "2018-07-09T05:17:23.054249066Z"
+		record2["kubernetes"] = map[string]int{"namespace_name":1234}
+		record2["host"] = "minikube"
+		record2["container_name"] = "etcd"
+		record2["docker_id"] = "3d6e6ca31dda9714588d6ae856b1c90b28f9c461c1f3c2b15c631ca4a89f561c"
+
+		err = out.Write(record2, time.Unix(0, 0).UTC(), "")
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -74,9 +79,8 @@ var _ = Describe("Out", func() {
 
 		spyDrain = newSpyDrain(spyDrain.url())
 
-		record := map[string]string{
-			"log": "some-log-message",
-		}
+		record := make(map[interface{}]interface{})
+		record["log"] = "some-log-message"
 
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -90,9 +94,9 @@ var _ = Describe("Out", func() {
 		spyDrain := newSpyDrain()
 		defer spyDrain.stop()
 		out := syslog.NewOut(spyDrain.url())
-		record := map[string]string{
-			"log": "some-log-message",
-		}
+
+		record := make(map[interface{}]interface{})
+		record["log"] = "some-log-message"
 
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -116,9 +120,9 @@ var _ = Describe("Out", func() {
 	It("reconnects if previous connection went away", func() {
 		spyDrain := newSpyDrain()
 		out := syslog.NewOut(spyDrain.url())
-		record1 := map[string]string{
-			"log": "some-log-message-1",
-		}
+		record1 := make(map[interface{}]interface{})
+		record1["log"] = "some-log-message-1"
+
 		err := out.Write(record1, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 		spyDrain.expectReceived(
@@ -128,9 +132,8 @@ var _ = Describe("Out", func() {
 		spyDrain.stop()
 		spyDrain = newSpyDrain(spyDrain.url())
 
-		record2 := map[string]string{
-			"log": "some-log-message-2",
-		}
+		record2 := make(map[interface{}]interface{})
+		record2["log"] = "some-log-message-2"
 
 		f := func() error {
 			return out.Write(record2, time.Unix(0, 0).UTC(), "")
