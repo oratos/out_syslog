@@ -18,7 +18,7 @@ var _ = Describe("Out", func() {
 		out := syslog.NewOut(spyDrain.url())
 
 		record := make(map[interface{}]interface{})
-		record["log"] = "some-log-message"
+		record["log"] = []byte("some-log-message")
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
 
@@ -33,7 +33,7 @@ var _ = Describe("Out", func() {
 
 		out := syslog.NewOut(spyDrain.url())
 		record := make(map[interface{}]interface{})
-		record["log"] = "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add"
+		record["log"] = []byte("2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add")
 		record["stream"] = "stderr"
 		record["time"] = "2018-07-09T05:17:23.054249066Z"
 		record["kubernetes"] = map[string]string{"pod_name":"etcd-minikube", "namespace_name":"kube-system"}
@@ -60,7 +60,7 @@ var _ = Describe("Out", func() {
 		Expect(err).To(HaveOccurred())
 
 		record2 := make(map[interface{}]interface{})
-		record2["log"] = "2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add"
+		record2["log"] = []byte("2018-07-09 05:17:23.054078 I | etcdmain: Git SHA: 918698add")
 		record2["stream"] = "stderr"
 		record2["time"] = "2018-07-09T05:17:23.054249066Z"
 		record2["kubernetes"] = map[string]int{"namespace_name":1234}
@@ -80,7 +80,7 @@ var _ = Describe("Out", func() {
 		spyDrain = newSpyDrain(spyDrain.url())
 
 		record := make(map[interface{}]interface{})
-		record["log"] = "some-log-message"
+		record["log"] = []byte("some-log-message")
 
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -96,7 +96,7 @@ var _ = Describe("Out", func() {
 		out := syslog.NewOut(spyDrain.url())
 
 		record := make(map[interface{}]interface{})
-		record["log"] = "some-log-message"
+		record["log"] = []byte("some-log-message")
 
 		err := out.Write(record, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -121,7 +121,7 @@ var _ = Describe("Out", func() {
 		spyDrain := newSpyDrain()
 		out := syslog.NewOut(spyDrain.url())
 		record1 := make(map[interface{}]interface{})
-		record1["log"] = "some-log-message-1"
+		record1["log"] = []byte("some-log-message-1")
 
 		err := out.Write(record1, time.Unix(0, 0).UTC(), "")
 		Expect(err).ToNot(HaveOccurred())
@@ -133,7 +133,7 @@ var _ = Describe("Out", func() {
 		spyDrain = newSpyDrain(spyDrain.url())
 
 		record2 := make(map[interface{}]interface{})
-		record2["log"] = "some-log-message-2"
+		record2["log"] = []byte("some-log-message-2")
 
 		f := func() error {
 			return out.Write(record2, time.Unix(0, 0).UTC(), "")

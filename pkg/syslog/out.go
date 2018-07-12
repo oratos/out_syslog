@@ -68,7 +68,7 @@ func convert(
 
 		switch key {
 		case "log":
-			log_msg = []byte(v.(string))
+			log_msg = v.([]byte)
 		case "host":
 			hostname = v.(string)
 		case "container_name":
