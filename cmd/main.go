@@ -50,7 +50,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		}
 		timestamp := flbTime.Time
 
-		err := out.Write(convert(record), timestamp, C.GoString(tag))
+		err := out.Write(record, timestamp, C.GoString(tag))
 		if err != nil {
 			// TODO: switch over to FLB_RETRY when we are capable of retrying
 			// TODO: how we know the flush keeps running issues.
@@ -64,24 +64,6 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 //export FLBPluginExit
 func FLBPluginExit() int {
 	return output.FLB_OK
-}
-
-func convert(in map[interface{}]interface{}) map[string]string {
-	out := make(map[string]string, len(in))
-	for k, v := range in {
-		key, ok := k.(string)
-		if !ok {
-			continue
-		}
-		switch value := v.(type) {
-		case string:
-			out[key] = value
-		case []byte:
-			out[key] = string(value)
-		default:
-		}
-	}
-	return out
 }
 
 func main() {
