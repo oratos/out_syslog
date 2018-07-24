@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -14,14 +15,53 @@ import (
 
 // Out writes fluentbit messages via syslog TCP (RFC 5424 and RFC 6587).
 type Out struct {
-	addr string
-	conn net.Conn
+	addr             string
+	conn             net.Conn
+	maintainConnFunc func(*Out) error
+	tlsConfig        *tls.Config
+}
+
+func NewTLSOut(addr string, skipInsecure bool, timeout time.Duration) *Out {
+	config := &tls.Config{
+		InsecureSkipVerify: skipInsecure,
+	}
+
+	return &Out{
+		addr:      addr,
+		tlsConfig: config,
+		maintainConnFunc: func(self *Out) error {
+			if self.conn == nil {
+				dialer := net.Dialer{
+					Timeout: timeout,
+				}
+
+				conn, err := tls.DialWithDialer(
+					&dialer,
+					"tcp",
+					self.addr,
+					self.tlsConfig,
+				)
+
+				self.conn = conn
+				return err
+			}
+			return nil
+		},
+	}
 }
 
 // NewOut creates a new
 func NewOut(addr string) *Out {
 	return &Out{
 		addr: addr,
+		maintainConnFunc: func(self *Out) error {
+			if self.conn == nil {
+				conn, err := net.Dial("tcp", self.addr)
+				self.conn = conn
+				return err
+			}
+			return nil
+		},
 	}
 }
 
@@ -33,7 +73,7 @@ func (o *Out) Write(
 	ts time.Time,
 	tag string,
 ) error {
-	err := o.maintainConnection()
+	err := o.maintainConnFunc(o)
 	if err != nil {
 		return err
 	}
@@ -42,15 +82,6 @@ func (o *Out) Write(
 	_, err = msg.WriteTo(o.conn)
 	if err != nil {
 		o.conn = nil
-		return err
-	}
-	return nil
-}
-
-func (o *Out) maintainConnection() error {
-	if o.conn == nil {
-		conn, err := net.Dial("tcp", o.addr)
-		o.conn = conn
 		return err
 	}
 	return nil
