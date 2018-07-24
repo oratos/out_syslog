@@ -1,10 +1,13 @@
 package main
 
 import (
-	"unsafe"
 	"C"
+	"unsafe"
 
 	"log"
+
+	"strings"
+	"time"
 
 	"github.com/fluent/fluent-bit-go/output"
 	"github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog"
@@ -25,6 +28,20 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	addr := output.FLBPluginConfigKey(ctx, "addr")
 	log.Println("[out_syslog] addr = ", addr)
+
+	tls := output.FLBPluginConfigKey(ctx, "enabletls")
+	log.Println("[out_syslog] tls = ", tls)
+
+	if strings.EqualFold(tls, "true") {
+		skipVerifyS := output.FLBPluginConfigKey(ctx, "insecureskipverify")
+		log.Println("[out_syslog] insecure_skip_verify = ", skipVerifyS)
+
+		skipVerify := strings.EqualFold(skipVerifyS, "true")
+
+		out = syslog.NewTLSOut(addr, skipVerify, 30*time.Second)
+		return output.FLB_OK
+	}
+
 	out = syslog.NewOut(addr)
 	return output.FLB_OK
 }

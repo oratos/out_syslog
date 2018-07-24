@@ -375,7 +375,7 @@ var _ = Describe("Out", func() {
 			)
 		})
 
-		It("fails to connect to non TLS endpoint", func() {
+		It("fails when connecting to non TLS endpoint", func() {
 			spyDrain := newSpyDrain()
 			defer spyDrain.stop()
 
