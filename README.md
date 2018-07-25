@@ -55,3 +55,18 @@ fluent-bit \
 ```
 ./tests/run-linter.sh
 ```
+
+## How to Configure In Fluent Bit Conf
+Add the following output section to your Fluent Bit configuration file. Note
+that the `EnableTLS` and `InsecureSkipVerify` configurations are optional and
+only needed if you are connecting to an endpoint that supports TLS. By
+default, both of thos optional fields are false.
+
+```
+[OUTPUT]
+	Name syslog
+	Match *
+	Addr logs.papertrailapp.com:18271
+	Enable_TLS  true
+	Insecure_Skip_Verify  true
+```

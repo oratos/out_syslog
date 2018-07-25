@@ -29,16 +29,16 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 	addr := output.FLBPluginConfigKey(ctx, "addr")
 	log.Println("[out_syslog] addr = ", addr)
 
-	tls := output.FLBPluginConfigKey(ctx, "enabletls")
+	tls := output.FLBPluginConfigKey(ctx, "enable_tls")
 	log.Println("[out_syslog] tls = ", tls)
 
 	if strings.EqualFold(tls, "true") {
-		skipVerifyS := output.FLBPluginConfigKey(ctx, "insecureskipverify")
+		skipVerifyS := output.FLBPluginConfigKey(ctx, "insecure_skip_verify")
 		log.Println("[out_syslog] insecure_skip_verify = ", skipVerifyS)
 
 		skipVerify := strings.EqualFold(skipVerifyS, "true")
 
-		out = syslog.NewTLSOut(addr, skipVerify, 30*time.Second)
+		out = syslog.NewTLSOut(addr, skipVerify, 5*time.Second)
 		return output.FLB_OK
 	}
 

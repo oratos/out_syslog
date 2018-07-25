@@ -366,6 +366,7 @@ var _ = Describe("Out", func() {
 			// TLS will block on waiting for handshake so the write needs
 			// to occur in a separate go routine
 			go func() {
+				defer GinkgoRecover()
 				err := out.Write(record, time.Unix(0, 0).UTC(), "")
 				Expect(err).ToNot(HaveOccurred())
 			}()

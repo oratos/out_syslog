@@ -84,8 +84,8 @@ var _ = Describe("Syslog Output Plugin", func() {
 				"--prop", "Path="+path.Join("/input", path.Base(logPath)),
 				"--output", "syslog",
 				"--prop", "Addr="+spyDrain.url(),
-				"--prop", "EnableTLS=true",
-				"--prop", "InsecureSkipVerify=true",
+				"--prop", "Enable_TLS=true",
+				"--prop", "Insecure_Skip_Verify=true",
 			)
 			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
@@ -120,8 +120,7 @@ var _ = Describe("Syslog Output Plugin", func() {
 				"--prop", "Path="+path.Join("/input", path.Base(logPath)),
 				"--output", "syslog",
 				"--prop", "Addr="+spyDrain.url(),
-				"--prop", "EnableTLS=true",
-				"--prop", "InsecureSkipVerify=false",
+				"--prop", "Enable_TLS=true",
 			)
 			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
