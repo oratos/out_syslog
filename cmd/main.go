@@ -2,6 +2,7 @@ package main
 
 import (
 	"C"
+	"crypto/tls"
 	"unsafe"
 
 	"log"
@@ -29,16 +30,17 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 	addr := output.FLBPluginConfigKey(ctx, "addr")
 	log.Println("[out_syslog] addr = ", addr)
 
-	tls := output.FLBPluginConfigKey(ctx, "enable_tls")
-	log.Println("[out_syslog] tls = ", tls)
+	enable_tls := output.FLBPluginConfigKey(ctx, "enable_tls")
+	log.Println("[out_syslog] tls = ", enable_tls)
 
-	if strings.EqualFold(tls, "true") {
+	if strings.EqualFold(enable_tls, "true") {
 		skipVerifyS := output.FLBPluginConfigKey(ctx, "insecure_skip_verify")
 		log.Println("[out_syslog] insecure_skip_verify = ", skipVerifyS)
 
 		skipVerify := strings.EqualFold(skipVerifyS, "true")
 
-		out = syslog.NewTLSOut(addr, skipVerify, 5*time.Second)
+		tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
+		out = syslog.NewTLSOut(addr, syslog.WithTLSConfig(tlsConfig), syslog.WithDialTimeout(5*time.Second))
 		return output.FLB_OK
 	}
 

@@ -60,7 +60,7 @@ fluent-bit \
 Add the following output section to your Fluent Bit configuration file. Note
 that the `EnableTLS` and `InsecureSkipVerify` configurations are optional and
 only needed if you are connecting to an endpoint that supports TLS. By
-default, both of thos optional fields are false.
+default, both of those optional fields are false.
 
 ```
 [OUTPUT]

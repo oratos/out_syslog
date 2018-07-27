@@ -1,6 +1,7 @@
 package syslog_test
 
 import (
+	"crypto/tls"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -360,7 +361,8 @@ var _ = Describe("Out", func() {
 			spyDrain := newTLSSpyDrain()
 			defer spyDrain.stop()
 
-			out := syslog.NewTLSOut(spyDrain.url(), true, 1*time.Second)
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			out := syslog.NewTLSOut(spyDrain.url(), syslog.WithTLSConfig(tlsConfig), syslog.WithDialTimeout(1*time.Second))
 			record := map[interface{}]interface{}{"log": []byte("some-log-message")}
 
 			// TLS will block on waiting for handshake so the write needs
@@ -380,7 +382,8 @@ var _ = Describe("Out", func() {
 			spyDrain := newSpyDrain()
 			defer spyDrain.stop()
 
-			out := syslog.NewTLSOut(spyDrain.url(), true, 1*time.Second)
+			tlsConfig := &tls.Config{InsecureSkipVerify: true}
+			out := syslog.NewTLSOut(spyDrain.url(), syslog.WithTLSConfig(tlsConfig), syslog.WithDialTimeout(1*time.Second))
 			record := map[interface{}]interface{}{"log": []byte("some-log-message")}
 
 			err := out.Write(record, time.Unix(0, 0).UTC(), "")

@@ -15,54 +15,76 @@ import (
 
 // Out writes fluentbit messages via syslog TCP (RFC 5424 and RFC 6587).
 type Out struct {
-	addr             string
-	conn             net.Conn
-	maintainConnFunc func(*Out) error
-	tlsConfig        *tls.Config
+	addr               string
+	conn               net.Conn
+	maintainConnection func() error
+	timeout            time.Duration
+	tlsConfig          *tls.Config
 }
 
-func NewTLSOut(addr string, skipInsecure bool, timeout time.Duration) *Out {
-	config := &tls.Config{
-		InsecureSkipVerify: skipInsecure,
-	}
+type TLSOutOption func(*Out)
 
-	return &Out{
+func WithTLSConfig(c *tls.Config) TLSOutOption {
+	return func(o *Out) {
+		o.tlsConfig = c
+	}
+}
+
+func WithDialTimeout(timeout time.Duration) TLSOutOption {
+	return func(o *Out) {
+		o.timeout = timeout
+	}
+}
+
+func NewTLSOut(addr string, opts ...TLSOutOption) *Out {
+	out := &Out{
 		addr:      addr,
-		tlsConfig: config,
-		maintainConnFunc: func(self *Out) error {
-			if self.conn == nil {
-				dialer := net.Dialer{
-					Timeout: timeout,
-				}
-
-				conn, err := tls.DialWithDialer(
-					&dialer,
-					"tcp",
-					self.addr,
-					self.tlsConfig,
-				)
-
-				self.conn = conn
-				return err
-			}
-			return nil
-		},
+		tlsConfig: &tls.Config{},
+		timeout:   0,
 	}
+
+	out.maintainConnection = func() error {
+		if out.conn == nil {
+			dialer := net.Dialer{
+				Timeout: out.timeout,
+			}
+
+			conn, err := tls.DialWithDialer(
+				&dialer,
+				"tcp",
+				out.addr,
+				out.tlsConfig,
+			)
+
+			out.conn = conn
+			return err
+		}
+		return nil
+	}
+
+	for _, o := range opts {
+		o(out)
+	}
+
+	return out
 }
 
 // NewOut creates a new
 func NewOut(addr string) *Out {
-	return &Out{
+	o := &Out{
 		addr: addr,
-		maintainConnFunc: func(self *Out) error {
-			if self.conn == nil {
-				conn, err := net.Dial("tcp", self.addr)
-				self.conn = conn
-				return err
-			}
-			return nil
-		},
 	}
+
+	o.maintainConnection = func() error {
+		if o.conn == nil {
+			conn, err := net.Dial("tcp", o.addr)
+			o.conn = conn
+			return err
+		}
+		return nil
+	}
+
+	return o
 }
 
 // Write takes a record, timestamp, and tag and converts it into a syslog
@@ -73,7 +95,7 @@ func (o *Out) Write(
 	ts time.Time,
 	tag string,
 ) error {
-	err := o.maintainConnFunc(o)
+	err := o.maintainConnection()
 	if err != nil {
 		return err
 	}
