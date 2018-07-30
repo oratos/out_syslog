@@ -191,9 +191,7 @@ func newTLSSpyDrain(addr ...string) *spyDrain {
 		a = addr[0]
 	}
 
-	cert, err := tls.LoadX509KeyPair(
-		"../pkg/syslog/test/server.crt",
-		"../pkg/syslog/test/server_open.key")
+	cert, err := tls.X509KeyPair(tlsCert, tlsKey)
 	Expect(err).ToNot(HaveOccurred())
 
 	config := &tls.Config{
@@ -259,3 +257,4 @@ func (s *spyDrain) receiveMsgs() (string, error) {
 
 	return buf.ReadString('\n')
 }
+

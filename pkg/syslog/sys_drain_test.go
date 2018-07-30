@@ -20,7 +20,7 @@ func newTLSSpyDrain(addr ...string) *spyDrain {
 		a = addr[0]
 	}
 
-	cert, err := tls.LoadX509KeyPair("test/server.crt", "test/server_open.key")
+	cert, err := tls.X509KeyPair(tlsCert, tlsKey)
 	Expect(err).ToNot(HaveOccurred())
 
 	config := &tls.Config{
