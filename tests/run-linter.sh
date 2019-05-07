@@ -14,7 +14,7 @@ function log {
 function install_golangci_lint {
     if ! command -v golangci-lint 1>/dev/null 2>&1; then
         log "Install golangci-lint"
-        curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b "$(go env GOPATH)/bin" v1.12.2
+        curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b "$(go env GOPATH)/bin" v1.16.0
     fi
 }
 
