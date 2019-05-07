@@ -59,7 +59,7 @@ git clone git@github.com:pivotal-cf/fluent-bit-out-syslog.git
 cd fluent-bit-out-syslog
 
 # get dependencies
-go mod download
+GO111MODULE=on go mod vendor
 
 # run the linter
 ./tests/run-linter.sh
