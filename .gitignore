@@ -2,4 +2,3 @@
 tests/out_syslog.h
 tests/out_syslog.so
 .idea/
-vendor/
