@@ -65,7 +65,7 @@ cd fluent-bit-out-syslog
 go test -v ./...
 
 # build the plugin
-go build -buildmode c-shared -o out_syslog.so cmd/main.go
+go build -mod vendor -buildmode c-shared -o out_syslog.so cmd/main.go
 ```
 
 ### How To Run In Local laptop
