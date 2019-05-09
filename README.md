@@ -58,9 +58,6 @@ cd workspace
 git clone git@github.com:pivotal-cf/fluent-bit-out-syslog.git
 cd fluent-bit-out-syslog
 
-# get dependencies
-go mod download
-
 # run the linter
 ./tests/run-linter.sh
 
@@ -68,7 +65,7 @@ go mod download
 go test -v ./...
 
 # build the plugin
-go build -buildmode c-shared -o out_syslog.so .
+go build -buildmode c-shared -o out_syslog.so cmd/main.go
 ```
 
 ### How To Run In Local laptop
@@ -78,7 +75,7 @@ fluent-bit \
     --input dummy \
     --plugin ./out_syslog.so \
     --output syslog \
-    --prop ClusterSinks=[{"addr": "localhost:12345"}]
+    --prop ClusterSinks='[{"addr":"localhost:12345"}]'
 ```
 
 [rfc5424]:   https://tools.ietf.org/html/rfc5424
