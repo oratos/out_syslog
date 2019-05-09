@@ -3,8 +3,10 @@ package syslog
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"strings"
@@ -53,7 +55,8 @@ type Sink struct {
 }
 
 type TLS struct {
-	InsecureSkipVerify bool `json:"insecure_skip_verify"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify"`
+	RootCA             string `json:"root_ca"`
 }
 
 // Out writes fluentbit messages via syslog TCP (RFC 5424 and RFC 6587).
@@ -65,20 +68,24 @@ type Out struct {
 	writeTimeout time.Duration
 }
 
+// OutOption is the optional setting of write output.
 type OutOption func(*Out)
 
+// WithDialTimeout configures dial up timeout.
 func WithDialTimeout(d time.Duration) OutOption {
 	return func(o *Out) {
 		o.dialTimeout = d
 	}
 }
 
+// WithBufferSize configures write buffer size.
 func WithBufferSize(s int) OutOption {
 	return func(o *Out) {
 		o.bufferSize = s
 	}
 }
 
+// WithWriteTimeout configures write timeout.
 func WithWriteTimeout(t time.Duration) OutOption {
 	return func(o *Out) {
 		o.writeTimeout = t
@@ -241,18 +248,39 @@ func (s *Sink) MessagesDropped() int64 {
 func tlsMaintainConn(s *Sink, out *Out) func() error {
 	return func() error {
 		if s.conn == nil {
-			dialer := net.Dialer{
-				Timeout: out.dialTimeout,
+			var (
+				conn  net.Conn // conn needs to be of type net.Conn, not *tls.Conn
+				roots *x509.CertPool
+				pem   []byte
+				err   error
+			)
+
+			// load certificate when need to do certificate check and certificate path not empty.
+			if !s.TLS.InsecureSkipVerify && s.TLS.RootCA != "" {
+				roots = x509.NewCertPool()
+
+				pem, err = ioutil.ReadFile(s.TLS.RootCA)
+				if err != nil {
+					return err
+				}
+
+				if ok := roots.AppendCertsFromPEM(pem); !ok {
+					return fmt.Errorf("append certificate failed")
+				}
 			}
-			var conn net.Conn // conn needs to be of type net.Conn, not *tls.Conn
-			conn, err := tls.DialWithDialer(
-				&dialer,
+
+			conn, err = tls.DialWithDialer(
+				&net.Dialer{
+					Timeout: out.dialTimeout,
+				},
 				"tcp",
 				s.Addr,
 				&tls.Config{
 					InsecureSkipVerify: s.TLS.InsecureSkipVerify,
+					RootCAs:            roots,
 				},
 			)
+
 			if err == nil {
 				s.conn = conn
 			}
