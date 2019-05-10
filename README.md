@@ -55,6 +55,7 @@ an endpoint that supports TLS.
     Match         *
     Addr          logs.papertrailapp.com:18271
     Cluster       true
+    TLSConfig     {"root_ca":"/path/to/root/ca"}
 ```
 
 
