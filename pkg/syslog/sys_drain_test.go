@@ -23,7 +23,7 @@ func newTLSSpySink(addr ...string) *spySink {
 		a = addr[0]
 	}
 
-	cert, err := tls.X509KeyPair(tlsCert, tlsKey)
+	cert, err := tls.LoadX509KeyPair("./testdata/server.crt", "./testdata/server.key")
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
 	config := &tls.Config{

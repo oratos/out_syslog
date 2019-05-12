@@ -1314,7 +1314,7 @@ var _ = Describe("Out", func() {
 			)
 		})
 
-		It("writes messages via syslog-tls", func() {
+		It("writes messages via syslog-tls w/o rootCA verify", func() {
 			spySink := newTLSSpySink()
 			defer spySink.stop()
 
@@ -1372,6 +1372,44 @@ var _ = Describe("Out", func() {
 
 			out.Write(r, time.Unix(0, 0).UTC(), "pod.log")
 			Eventually(s.MessagesDropped).Should(Equal(int64(1)))
+		})
+
+		It("writes messages via syslog-tls w/ rootCA verify", func() {
+			spySink := newTLSSpySink("localhost:8443")
+			defer spySink.stop()
+
+			s1 := &syslog.Sink{
+				Addr:      spySink.url(),
+				Namespace: "some-ns",
+				TLS: &syslog.TLS{
+					RootCA: "./testdata/rootCA.crt",
+				},
+			}
+			cs1 := &syslog.Sink{
+				Addr: spySink.url(),
+				TLS: &syslog.TLS{
+					RootCA: "./testdata/rootCA.crt",
+				},
+			}
+
+			out := syslog.NewOut([]*syslog.Sink{s1}, []*syslog.Sink{cs1})
+			r := map[interface{}]interface{}{
+				"log": []byte("some-log"),
+				"kubernetes": map[interface{}]interface{}{
+					"namespace_name": []byte("some-ns"),
+				},
+			}
+
+			// TLS will block on waiting for handshake so the write needs
+			// to occur in a separate go routine
+			go func() {
+				defer GinkgoRecover()
+				out.Write(r, time.Unix(0, 0).UTC(), "pod.log")
+			}()
+
+			spySink.expectReceivedOnly(
+				`<14>1 1970-01-01T00:00:00+00:00 - pod.log/some-ns// - - [kubernetes@47450 namespace_name="some-ns" object_name="" container_name=""] some-log` + "\n",
+			)
 		})
 	})
 })

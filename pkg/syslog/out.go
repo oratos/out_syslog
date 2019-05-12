@@ -255,7 +255,6 @@ func tlsMaintainConn(s *Sink, out *Out) func() error {
 				err   error
 			)
 
-			// load certificate when need to do certificate check and certificate path not empty.
 			if !s.TLS.InsecureSkipVerify && s.TLS.RootCA != "" {
 				roots = x509.NewCertPool()
 
