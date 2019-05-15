@@ -1,12 +1,12 @@
 package syslog
 
 import (
-	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -22,11 +22,13 @@ const (
 	logPrefix   = "pod.log"
 )
 
+// SinkError represents sink error message and timestamp.
 type SinkError struct {
-	Msg       string `json:"msg"`
+	Msg       string    `json:"msg"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
+// SinkState represents sink successful/error state.
 type SinkState struct {
 	Name               string     `json:"name"`
 	Namespace          string     `json:"namespace"`
@@ -34,6 +36,7 @@ type SinkState struct {
 	Error              *SinkError `json:"error"`
 }
 
+// Sink represents sink information.
 type Sink struct {
 	Addr      string `json:"addr"`
 	Namespace string `json:"namespace"`
@@ -52,6 +55,7 @@ type Sink struct {
 	maintainConnection func() error
 }
 
+// TLS represents sink TLS configuration.
 type TLS struct {
 	InsecureSkipVerify bool `json:"insecure_skip_verify"`
 }
@@ -153,6 +157,7 @@ func (o *Out) Write(
 	}
 }
 
+// SinkState reports all sinks successful/error state.
 func (o *Out) SinkState() []SinkState {
 	var stats []SinkState
 	for _, sinks := range o.sinks {
@@ -161,7 +166,7 @@ func (o *Out) SinkState() []SinkState {
 				Name:               s.Name,
 				Namespace:          s.Namespace,
 				LastSuccessfulSend: time.Unix(0, atomic.LoadInt64(&s.lastSendSuccessNanos)),
-				Error:              s.LoadSinkError(),
+				Error:              s.loadSinkError(),
 			})
 		}
 	}
@@ -170,14 +175,14 @@ func (o *Out) SinkState() []SinkState {
 		stats = append(stats, SinkState{
 			Name:               s.Name,
 			LastSuccessfulSend: time.Unix(0, atomic.LoadInt64(&s.lastSendSuccessNanos)),
-			Error:              s.LoadSinkError(),
+			Error:              s.loadSinkError(),
 		})
 	}
 
 	return stats
 }
 
-func (s *Sink) LoadSinkError() *SinkError {
+func (s *Sink) loadSinkError() *SinkError {
 	if sinkError, ok := s.writeErr.Load().(SinkError); ok && sinkError.Msg != "" {
 		return &sinkError
 	}
@@ -213,8 +218,8 @@ func (s *Sink) write(w io.WriterTo) {
 	if err != nil {
 		atomic.AddInt64(&s.messagesDropped, 1)
 		s.writeErr.Store(SinkError{
-			Msg:err.Error(),
-			Timestamp:time.Now(),
+			Msg:       err.Error(),
+			Timestamp: time.Now(),
 		})
 		return
 	}
@@ -225,8 +230,8 @@ func (s *Sink) write(w io.WriterTo) {
 		s.conn = nil
 		atomic.AddInt64(&s.messagesDropped, 1)
 		s.writeErr.Store(SinkError{
-			Msg:err.Error(),
-			Timestamp:time.Now(),
+			Msg:       err.Error(),
+			Timestamp: time.Now(),
 		})
 		return
 	}
@@ -234,6 +239,7 @@ func (s *Sink) write(w io.WriterTo) {
 	atomic.StoreInt64(&s.lastSendSuccessNanos, time.Now().UnixNano())
 }
 
+// MessagesDropped reports number of messages be dropped.
 func (s *Sink) MessagesDropped() int64 {
 	return atomic.LoadInt64(&s.messagesDropped)
 }
@@ -284,9 +290,11 @@ func convert(
 	tag string,
 ) (*rfc5424.Message, string) {
 	var (
-		logmsg []byte
-		k8sMap map[interface{}]interface{}
-		host   string
+		logmsg                     []byte
+		host, appName, pid, nsName string
+		facility, severity         int
+		priority                   rfc5424.Priority
+		k8sMap                     map[interface{}]interface{}
 	)
 
 	for k, v := range record {
@@ -296,84 +304,127 @@ func convert(
 		}
 
 		switch key {
-		case "log":
+		case "MESSAGE", "log":
 			v2, ok2 := v.([]byte)
 			if !ok2 {
 				continue
 			}
 			logmsg = v2
+		case "_HOSTNAME", "cluster_name":
+			v2, ok2 := v.([]byte)
+			if !ok2 {
+				continue
+			}
+			host = string(v2)
+		case "_COMM":
+			v2, ok2 := v.([]byte)
+			if !ok2 {
+				continue
+			}
+			appName = string(v2)
+		case "SYSLOG_IDENTIFIER":
+			v2, ok2 := v.([]byte)
+			if !ok2 {
+				continue
+			}
+			// Get appname from COMM first.
+			// Ref: https://github.com/aiven/journalpump/blob/b299ddac373b25510106a1d771b9b7c8c233f1e1/journalpump/journalpump.py#L350-L356
+			if appName == "" {
+				appName = string(v2)
+			}
+		case "_PID":
+			v2, ok2 := v.([]byte)
+			if !ok2 {
+				continue
+			}
+			pid = string(v2)
+		case "SYSLOG_FACILITY":
+			v2, ok2 := v.([]byte)
+			if !ok2 {
+				continue
+			}
+			facility, _ = strconv.Atoi(string(v2))
+		case "PRIORITY":
+			v2, ok2 := v.([]byte)
+			if !ok2 {
+				continue
+			}
+			severity, _ = strconv.Atoi(string(v2))
 		case "kubernetes":
 			v2, ok2 := v.(map[interface{}]interface{})
 			if !ok2 {
 				continue
 			}
 			k8sMap = v2
-		case "cluster_name":
-			v2, ok2 := v.([]byte)
-			if !ok2 {
-				continue
-			}
-			host = string(v2)
+		default:
+			// unsupported key
 		}
 	}
 
-	var (
-		vmID          string
-		appName       string
-		podName       string
-		namespaceName string
-		containerName string
-		labelParams   []rfc5424.SDParam
-	)
-	for k, v := range k8sMap {
-		key, ok := k.(string)
-		if !ok {
-			continue
-		}
-
-		switch key {
-		case "host":
-			v2, ok2 := v.([]byte)
-			if !ok2 {
-				continue
-			}
-			vmID = string(v2)
-		case "container_name":
-			v2, ok2 := v.([]byte)
-			if !ok2 {
-				continue
-			}
-			containerName = string(v2)
-		case "pod_name":
-			v2, ok2 := v.([]byte)
-			if !ok2 {
-				continue
-			}
-			podName = string(v2)
-		case "namespace_name":
-			v2, ok2 := v.([]byte)
-			if !ok2 {
-				continue
-			}
-			namespaceName = string(v2)
-		case "labels":
-			v2, ok2 := v.(map[interface{}]interface{})
-			if !ok2 {
-				continue
-			}
-			labelParams = processLabels(v2)
-		}
+	// Priority = Facility x 8 + Severity
+	priority = rfc5424.Priority(facility<<3 + severity)
+	if priority == 0 {
+		priority = rfc5424.User + rfc5424.Info
 	}
 
-	k8sStructuredData := buildStructuredData(
-		labelParams,
-		namespaceName,
-		podName,
-		containerName,
-		vmID,
-	)
+	rfc5424Msg := rfc5424.Message{
+		Priority:  priority,
+		Timestamp: ts,
+		Hostname:  host,
+		AppName:   appName,
+		ProcessID: pid,
+		MessageID: "-",
+		Message:   logmsg,
+	}
 
-	if len(k8sMap) != 0 {
+	if len(k8sMap) > 0 {
+		var (
+			podName, containerName, vmID string
+			labelParams                  []rfc5424.SDParam
+		)
+
+		for k, v := range k8sMap {
+			key, ok := k.(string)
+			if !ok {
+				continue
+			}
+
+			switch key {
+			case "host":
+				v2, ok2 := v.([]byte)
+				if !ok2 {
+					continue
+				}
+				vmID = string(v2)
+			case "container_name":
+				v2, ok2 := v.([]byte)
+				if !ok2 {
+					continue
+				}
+				containerName = string(v2)
+			case "pod_name":
+				v2, ok2 := v.([]byte)
+				if !ok2 {
+					continue
+				}
+				podName = string(v2)
+			case "namespace_name":
+				v2, ok2 := v.([]byte)
+				if !ok2 {
+					continue
+				}
+				nsName = string(v2)
+			case "labels":
+				v2, ok2 := v.(map[interface{}]interface{})
+				if !ok2 {
+					continue
+				}
+				labelParams = processLabels(v2)
+			default:
+				// unsupported key
+			}
+		}
+
 		prefix := logPrefix
 		if strings.HasPrefix(tag, eventPrefix) {
 			prefix = eventPrefix
@@ -381,7 +432,7 @@ func convert(
 		appName = fmt.Sprintf(
 			"%s/%s/%s/%s",
 			prefix,
-			namespaceName,
+			nsName,
 			podName,
 			containerName,
 		)
@@ -390,26 +441,27 @@ func convert(
 		if len(appName) > 48 {
 			appName = appName[:48]
 		}
+
+		// Updates appname and hostname.
+		rfc5424Msg.AppName = appName
+
+		if rfc5424Msg.Hostname == "" {
+			rfc5424Msg.Hostname = vmID
+		}
+
+		// Add to structured data.
+		for _, label := range labelParams {
+			rfc5424Msg.AddDatum("kubernetes", label.Name, label.Value)
+		}
+		rfc5424Msg.AddDatum("kubernetes", "namespace_name", nsName)
+		rfc5424Msg.AddDatum("kubernetes", "pod_name", podName)
+		rfc5424Msg.AddDatum("kubernetes", "container_name", containerName)
+		if vmID != "" {
+			rfc5424Msg.AddDatum("kubernetes", "vm_id", vmID)
+		}
 	}
 
-	if !bytes.HasSuffix(logmsg, []byte("\n")) {
-		logmsg = append(logmsg, byte('\n'))
-	}
-
-	if host == "" {
-		host = vmID
-	}
-
-	return &rfc5424.Message{
-		Priority:  rfc5424.Info + rfc5424.User,
-		Timestamp: ts,
-		Hostname:  host,
-		AppName:   appName,
-		Message:   logmsg,
-		StructuredData: []rfc5424.StructuredData{
-			k8sStructuredData,
-		},
-	}, namespaceName
+	return &rfc5424Msg, nsName
 }
 
 func processLabels(labels map[interface{}]interface{}) []rfc5424.SDParam {
@@ -430,36 +482,4 @@ func processLabels(labels map[interface{}]interface{}) []rfc5424.SDParam {
 		})
 	}
 	return params
-}
-
-func buildStructuredData(labels []rfc5424.SDParam, ns, pn, cn, vmID string) rfc5424.StructuredData {
-	labels = append(
-		labels,
-		rfc5424.SDParam{
-			Name:  "namespace_name",
-			Value: ns,
-		},
-		rfc5424.SDParam{
-			Name:  "object_name",
-			Value: pn,
-		},
-		rfc5424.SDParam{
-			Name:  "container_name",
-			Value: cn,
-		},
-	)
-	if vmID != "" {
-		labels = append(
-			labels,
-			rfc5424.SDParam{
-				Name:  "vm_id",
-				Value: vmID,
-			},
-		)
-	}
-
-	return rfc5424.StructuredData{
-		ID:         "kubernetes@47450",
-		Parameters: labels,
-	}
 }

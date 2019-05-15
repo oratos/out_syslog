@@ -16,7 +16,7 @@ RUN go build \
     -mod=vendor \
     cmd/main.go
 
-FROM ubuntu:xenial as builder
+FROM ubuntu:bionic as builder
 
 # Fluent Bit version
 ENV FLB_MAJOR 1
@@ -66,11 +66,11 @@ COPY /config/fluent-bit.conf \
      /config/parsers_cinder.conf \
      /fluent-bit/etc/
 
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 
 RUN apt-get update \
     && apt-get dist-upgrade -y \
-    && apt-get install --no-install-recommends ca-certificates libssl1.0.2 -y libsasl2-2 \
+    && apt-get install --no-install-recommends ca-certificates libssl1.0.0 -y libsasl2-2 systemd \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get autoclean
 
