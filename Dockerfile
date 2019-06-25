@@ -73,7 +73,7 @@ FROM ubuntu:xenial
 
 RUN apt-get update \
     && apt-get dist-upgrade -y \
-    && apt-get install --no-install-recommends ca-certificates libssl1.0.2 -y libsasl2-2 wget curl \
+    && apt-get install --no-install-recommends ca-certificates libssl1.0.2 -y libsasl2-2 curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get autoclean
 
