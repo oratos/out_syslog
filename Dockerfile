@@ -73,7 +73,7 @@ FROM ubuntu:xenial
 
 RUN apt-get update \
     && apt-get dist-upgrade -y \
-    && apt-get install --no-install-recommends ca-certificates libssl1.0.2 -y libsasl2-2 \
+    && apt-get install --no-install-recommends ca-certificates libssl1.0.2 -y libsasl2-2 wget curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get autoclean
 
@@ -82,4 +82,4 @@ COPY --from=gobuilder /out_syslog.so /fluent-bit/bin/
 
 EXPOSE 2020
 
-CMD ["/fluent-bit/bin/fluent-bit", "--plugin", "/fluent-bit/bin/out_syslog.so", "--config", "/fluent-bit/etc/fluent-bit.conf"]
+#CMD ["/fluent-bit/bin/fluent-bit", "--plugin", "/fluent-bit/bin/out_syslog.so", "--config", "/fluent-bit/etc/fluent-bit.conf"]
