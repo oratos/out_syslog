@@ -47,7 +47,7 @@ an endpoint that supports TLS.
     Match         *
     Addr          logs.papertrailapp.com:18271
     Namespace     myns
-    TLSConfig     {"insecure_skip_verify":"true"}
+    TLSConfig     {"insecure_skip_verify":true}
 
 [OUTPUT]
     Name          syslog
