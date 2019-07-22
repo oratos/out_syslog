@@ -412,7 +412,7 @@ func convert(
 		// 	podName,
 		// 	containerName,
 		// )
-		appName = fmt.Sprintf("%s", "ericomshield[-]")
+		appName = fmt.Sprintf("%s", "ericomshield[-]:")
 		// APP-NAME is limited to 48 chars in RFC 5424
 		// https://tools.ietf.org/html/rfc5424#section-6
 		if len(appName) > 48 {
