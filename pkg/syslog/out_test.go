@@ -1,6 +1,7 @@
 package syslog_test
 
 import (
+	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/rfc5424"
@@ -471,6 +472,91 @@ var _ = Describe("Out", func() {
 
 			spySink.expectReceivedOnly(
 				`<14>1 1970-01-01T00:00:00+00:00 some-host pod.log/namespace/pod-name/container - - [kubernetes@47450 namespace_name="namespace" object_name="pod-name" container_name="container" vm_id="some-host"] some-log` + "\n",
+			)
+		})
+
+		DescribeTable(
+			"filters the hostname to conform to DNS requirements",
+			func(hostname, expected string) {
+				spySink := newSpySink()
+				defer spySink.stop()
+
+				s := syslog.Sink{
+					Addr:      spySink.url(),
+					Namespace: "namespace",
+				}
+				out := syslog.NewOut(
+					[]*syslog.Sink{&s},
+					nil,
+					syslog.WithSanitizeHost(true),
+				)
+				r1 := map[interface{}]interface{}{
+					"cluster_name": []byte(hostname),
+					"log":          []byte("some-log-1"),
+					"kubernetes": map[interface{}]interface{}{
+						"host":           []byte("vm-host-id"),
+						"namespace_name": []byte("namespace"),
+					},
+				}
+				r2 := map[interface{}]interface{}{
+					"log": []byte("some-log-2"),
+					"kubernetes": map[interface{}]interface{}{
+						"host":           []byte(hostname),
+						"namespace_name": []byte("namespace"),
+					},
+				}
+
+				out.Write(r1, time.Unix(0, 0).UTC(), "pod.log")
+				out.Write(r2, time.Unix(0, 0).UTC(), "pod.log")
+
+				spySink.expectReceivedOnly(
+					fmt.Sprintf(`<14>1 1970-01-01T00:00:00+00:00 %s pod.log/namespace// - - [kubernetes@47450 namespace_name="namespace" object_name="" container_name="" vm_id="vm-host-id"] some-log-1`+"\n", expected),
+					fmt.Sprintf(`<14>1 1970-01-01T00:00:00+00:00 %s pod.log/namespace// - - [kubernetes@47450 namespace_name="namespace" object_name="" container_name="" vm_id="%s"] some-log-2`+"\n", expected, hostname),
+				)
+			},
+			Entry("valid hostnames unchanged", "some-host", "some-host"),
+			Entry("underscores", "some_host1", "some-host1"),
+			Entry("underscores trailing", "some_host_", "some-host"),
+			Entry("underscores leading", "_some_host", "some-host"),
+			Entry("multipart host", "some_host123_.com", "some-host123.com"),
+			Entry("multipart host with trailing period", "some_host_.com.", "some-host.com."),
+		)
+
+		It("does not filter the hostname to conform to DNS requirements by default", func() {
+			spySink := newSpySink()
+			defer spySink.stop()
+
+			s := syslog.Sink{
+				Addr:      spySink.url(),
+				Namespace: "namespace",
+			}
+			out := syslog.NewOut([]*syslog.Sink{&s}, nil)
+
+			hostname := "some_host_with_underscores"
+			expected := hostname
+
+			r1 := map[interface{}]interface{}{
+				"cluster_name": []byte(hostname),
+				"log":          []byte("some-log-1"),
+				"kubernetes": map[interface{}]interface{}{
+					"host":           []byte("vm-host-id"),
+					"namespace_name": []byte("namespace"),
+				},
+			}
+			r2 := map[interface{}]interface{}{
+				"log": []byte("some-log-2"),
+				"kubernetes": map[interface{}]interface{}{
+					"host":           []byte(hostname),
+					"namespace_name": []byte("namespace"),
+				},
+			}
+
+			out.Write(r1, time.Unix(0, 0).UTC(), "pod.log")
+			out.Write(r2, time.Unix(0, 0).UTC(), "pod.log")
+
+			spySink.expectReceivedOnly(
+				fmt.Sprintf(`<14>1 1970-01-01T00:00:00+00:00 %s pod.log/namespace// - - [kubernetes@47450 namespace_name="namespace" object_name="" container_name="" vm_id="vm-host-id"] some-log-1`+"\n", expected),
+				fmt.Sprintf(`<14>1 1970-01-01T00:00:00+00:00 %s pod.log/namespace// - - [kubernetes@47450 namespace_name="namespace" object_name="" container_name="" vm_id="%s"] some-log-2`+"\n", expected, hostname),
 			)
 		})
 

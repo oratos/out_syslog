@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -23,6 +24,8 @@ const (
 	eventPrefix = "k8s.event"
 	logPrefix   = "pod.log"
 )
+
+var invalidHostnameCharacter = regexp.MustCompile(`[^a-z0-9-]`)
 
 type SinkError struct {
 	Msg       string    `json:"msg"`
@@ -66,6 +69,7 @@ type Out struct {
 	dialTimeout  time.Duration
 	bufferSize   int
 	writeTimeout time.Duration
+	sanitizeHost bool
 }
 
 // OutOption is the optional setting of write output.
@@ -89,6 +93,14 @@ func WithBufferSize(s int) OutOption {
 func WithWriteTimeout(t time.Duration) OutOption {
 	return func(o *Out) {
 		o.writeTimeout = t
+	}
+}
+
+// WithSanitizeHost configures hostname sanitization to conform to DNS
+// requirements.
+func WithSanitizeHost(s bool) OutOption {
+	return func(o *Out) {
+		o.sanitizeHost = s
 	}
 }
 
@@ -143,7 +155,7 @@ func (o *Out) Write(
 	ts time.Time,
 	tag string,
 ) {
-	msg, namespace := convert(record, ts, tag)
+	msg, namespace := convert(record, ts, tag, o.sanitizeHost)
 
 	for _, cs := range o.clusterSinks {
 		cs.queueMessage(msg)
@@ -309,6 +321,7 @@ func convert(
 	record map[interface{}]interface{},
 	ts time.Time,
 	tag string,
+	sanitizeHost bool,
 ) (*rfc5424.Message, string) {
 	var (
 		logmsg []byte
@@ -426,6 +439,9 @@ func convert(
 	if host == "" {
 		host = vmID
 	}
+	if sanitizeHost {
+		host = sanitizeHostname(host)
+	}
 
 	return &rfc5424.Message{
 		Priority:  rfc5424.Info + rfc5424.User,
@@ -489,4 +505,14 @@ func buildStructuredData(labels []rfc5424.SDParam, ns, pn, cn, vmID string) rfc5
 		ID:         "kubernetes@47450",
 		Parameters: labels,
 	}
+}
+
+func sanitizeHostname(hostname string) string {
+	hostnames := strings.Split(hostname, ".")
+	for i, h := range hostnames {
+		h = invalidHostnameCharacter.ReplaceAllString(h, "-")
+		h = strings.Trim(h, "-")
+		hostnames[i] = h
+	}
+	return strings.Join(hostnames, ".")
 }

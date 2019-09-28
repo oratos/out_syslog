@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
 
 	"github.com/fluent/fluent-bit-go/output"
-
 	"github.com/pivotal-cf/fluent-bit-out-syslog/pkg/syslog"
 )
 
@@ -30,6 +30,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	namespace := output.FLBPluginConfigKey(plugin, "namespace")
 	cluster := output.FLBPluginConfigKey(plugin, "cluster")
 	tls := output.FLBPluginConfigKey(plugin, "tlsconfig")
+	sanitizeHost := output.FLBPluginConfigKey(plugin, "sanitizehost")
 
 	if addr == "" {
 		log.Println("[out_syslog] ERROR: Addr is required")
@@ -64,7 +65,22 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	} else {
 		sinks = append(sinks, sink)
 	}
-	out := syslog.NewOut(sinks, clusterSinks)
+
+	// Defaults to true so that plugin conforms better with rfc5424#section-6.2.4
+	sanitize := true
+	if len(sanitizeHost) != 0 {
+		var err error
+		sanitize, err = strconv.ParseBool(sanitizeHost)
+		if err != nil {
+			log.Printf("[out_syslog] ERROR: Unable to parse SanitizeHost: %s", err)
+			return output.FLB_ERROR
+		}
+	}
+	out := syslog.NewOut(
+		sinks,
+		clusterSinks,
+		syslog.WithSanitizeHost(sanitize),
+	)
 
 	// We are using runtime.KeepAlive to tell the Go Runtime to keep the
 	// reference to this pointer because once it leaves this context and
@@ -83,9 +99,9 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	output.FLBPluginSetContext(plugin, unsafe.Pointer(out))
 	runtime.KeepAlive(out)
 	if strings.ToLower(cluster) == "true" {
-		log.Printf("Initializing plugin %s for cluster to destination %s", name, addr)
+		log.Printf("[out_syslog] Initializing plugin %s for cluster to destination %s", name, addr)
 	} else {
-		log.Printf("Initializing plugin %s for namespace %s to destination %s", name, namespace, addr)
+		log.Printf("[out_syslog] Initializing plugin %s for namespace %s to destination %s", name, namespace, addr)
 	}
 	return output.FLB_OK
 }

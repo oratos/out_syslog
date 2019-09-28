@@ -1,53 +1,51 @@
-FROM oratos/golang-base:1.11 as gobuilder
+ARG BASE_IMAGE=ubuntu:bionic
+FROM $BASE_IMAGE as builder
 
-WORKDIR /root
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+       bison \
+       ca-certificates \
+       build-essential \
+       cmake \
+       flex \
+       git \
+       libsasl2-dev \
+       libssl-dev \
+       libsystemd-dev \
+       unzip \
+       wget \
+    && apt-get clean
+
+# Install Go
+ARG GOLANG_SOURCE=dl.google.com/go
+RUN wget https://$GOLANG_SOURCE/go1.12.9.linux-amd64.tar.gz -O go.tar.gz && \
+    tar -xf go.tar.gz && \
+    mv go /usr/local && \
+    rm go.tar.gz
+ENV GOROOT=/usr/local/go
+ENV GOPATH=$HOME/go
+ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
 ENV GOOS=linux \
     GOARCH=amd64
 
-COPY / /root/
+COPY / /syslog-plugin/
 
-RUN go build \
+RUN cd /syslog-plugin && go build \
     -a \
     -installsuffix fluent \
     -buildmode c-shared \
-    -o /out_syslog.so \
+    -o /syslog-plugin/out_syslog.so \
     -mod=readonly \
     -mod=vendor \
     cmd/main.go
+ENV FLB_SHA b3adad27582ed7db0338b699391ecc6bd3779c1f
+ENV FLB_TARBALL https://github.com/pivotal/fluent-bit/archive/$FLB_SHA.zip
 
-FROM ubuntu:xenial as builder
-
-# Fluent Bit version
-ENV FLB_MAJOR 1
-ENV FLB_MINOR 1
-ENV FLB_PATCH 3
-ENV FLB_VERSION 1.1.3
-
-ENV DEBIAN_FRONTEND noninteractive
-
-ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
-
-RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/
-
-RUN apt-get update \
-    && apt-get dist-upgrade -y \
-    && apt-get install -y \
-       build-essential \
-       cmake \
-       make \
-       wget \
-       unzip \
-       libsystemd-dev \
-       libssl-dev \
-       libasl-dev \
-       libsasl2-dev \
-       flex \
-       bison \
-       git \
-    && wget -O "/tmp/fluent-bit-${FLB_VERSION}.zip" ${FLB_TARBALL} \
-    && cd /tmp && unzip "fluent-bit-$FLB_VERSION.zip" \
-    && cd "fluent-bit-$FLB_VERSION"/build/ \
+RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/ \
+    && wget -O "/tmp/fluent-bit-$FLB_SHA.zip" ${FLB_TARBALL} \
+    && cd /tmp && unzip "fluent-bit-$FLB_SHA.zip" \
+    && cd "fluent-bit-$FLB_SHA"/build/ \
     && cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
@@ -58,7 +56,9 @@ RUN apt-get update \
           -DFLB_HTTP_SERVER=On \
           -DFLB_OUT_KAFKA=On .. \
     && make \
-    && install bin/fluent-bit /fluent-bit/bin/
+    && install bin/fluent-bit /fluent-bit/bin/ \
+    && rm -rf /tmp/fluent-bit-*
+
 
 # Configuration files
 COPY /config/fluent-bit.conf \
@@ -69,7 +69,7 @@ COPY /config/fluent-bit.conf \
      /config/parsers_cinder.conf \
      /fluent-bit/etc/
 
-FROM ubuntu:xenial
+RUN dpkg -l > /builder-dpkg-list
 
 RUN apt-get update \
     && apt-get dist-upgrade -y \
@@ -77,8 +77,37 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get autoclean
 
+# These COPY commands have been interlaced with RUN true due to the following
+# issues:
+# https://github.com/moby/moby/issues/37965#issuecomment-448926448
+# https://github.com/moby/moby/issues/38866
 COPY --from=builder /fluent-bit /fluent-bit
-COPY --from=gobuilder /out_syslog.so /fluent-bit/bin/
+COPY --from=builder /syslog-plugin /syslog-plugin
+COPY --from=builder /builder-dpkg-list /builder-dpkg-list
+RUN true
+COPY --from=builder /usr/lib/x86_64-linux-gnu/*sasl* /usr/lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libz* /usr/lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /lib/x86_64-linux-gnu/libz* /lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libssl.so* /usr/lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libcrypto.so* /usr/lib/x86_64-linux-gnu/
+# These below are all needed for systemd
+COPY --from=builder /lib/x86_64-linux-gnu/libsystemd* /lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /lib/x86_64-linux-gnu/libselinux.so* /lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /lib/x86_64-linux-gnu/liblzma.so* /lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /usr/lib/x86_64-linux-gnu/liblz4.so* /usr/lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /lib/x86_64-linux-gnu/libgcrypt.so* /lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /lib/x86_64-linux-gnu/libpcre.so* /lib/x86_64-linux-gnu/
+RUN true
+COPY --from=builder /lib/x86_64-linux-gnu/libgpg-error.so* /lib/x86_64-linux-gnu/
 
 EXPOSE 2020
 
