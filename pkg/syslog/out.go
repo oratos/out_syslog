@@ -414,17 +414,18 @@ func convert(
 	)
 
 	if len(k8sMap) != 0 {
-		prefix := logPrefix
-		if strings.HasPrefix(tag, eventPrefix) {
-			prefix = eventPrefix
-		}
-		appName = fmt.Sprintf(
-			"%s/%s/%s/%s",
-			prefix,
-			namespaceName,
-			podName,
-			containerName,
-		)
+		//prefix := logPrefix
+		// if strings.HasPrefix(tag, eventPrefix) {
+		// 	prefix = eventPrefix
+		// }
+		// appName = fmt.Sprintf(
+		// 	"%s/%s/%s/%s",
+		// 	prefix,
+		// 	namespaceName,
+		// 	podName,
+		// 	containerName,
+		// )
+		appName = fmt.Sprintf("%s", "ericomshield[-]:")
 		// APP-NAME is limited to 48 chars in RFC 5424
 		// https://tools.ietf.org/html/rfc5424#section-6
 		if len(appName) > 48 {

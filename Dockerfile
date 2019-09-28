@@ -71,10 +71,11 @@ COPY /config/fluent-bit.conf \
 
 RUN dpkg -l > /builder-dpkg-list
 
+FROM $BASE_IMAGE
+
 RUN apt-get update \
     && apt-get dist-upgrade -y \
-    && apt-get install --no-install-recommends ca-certificates libssl1.0.2 -y libsasl2-2 curl \
-    && rm -rf /var/lib/apt/lists/* \
+    && apt-get install --no-install-recommends -y ca-certificates libsasl2-2 curl \
     && apt-get autoclean
 
 # These COPY commands have been interlaced with RUN true due to the following
