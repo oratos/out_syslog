@@ -20,7 +20,7 @@ COPY vm-inventory.sh /vm-inventory.sh
 RUN /vm-inventory.sh -s deb -m /builder-dpkg-list ubuntu
 
 # Install Go
-ARG GOLANG_SOURCE=https://dl.google.com/go/go1.12.12.linux-amd64.tar.gz
+ARG GOLANG_SOURCE=https://dl.google.com/go/go1.13.5.linux-amd64.tar.gz
 RUN wget $GOLANG_SOURCE -O go.tar.gz && \
     tar -xf go.tar.gz && \
     mv go /usr/local && \
