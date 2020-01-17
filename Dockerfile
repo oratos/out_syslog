@@ -20,7 +20,7 @@ COPY vm-inventory.sh /vm-inventory.sh
 RUN /vm-inventory.sh -s deb -m /builder-dpkg-list ubuntu
 
 # Install Go
-ARG GOLANG_SOURCE=https://dl.google.com/go/go1.13.5.linux-amd64.tar.gz
+ARG GOLANG_SOURCE=https://dl.google.com/go/go1.13.6.linux-amd64.tar.gz
 RUN wget $GOLANG_SOURCE -O go.tar.gz && \
     tar -xf go.tar.gz && \
     mv go /usr/local && \
@@ -43,7 +43,8 @@ RUN cd /syslog-plugin && go build \
     -mod=vendor \
     cmd/main.go
 
-ENV FLB_SHA b3adad27582ed7db0338b699391ecc6bd3779c1f
+# https://github.com/pivotal/fluent-bit/releases/tag/v1.3.4
+ENV FLB_SHA 81e4d54526b70250764063d24d47f0e952fed808
 ENV FLB_TARBALL https://github.com/pivotal/fluent-bit/archive/$FLB_SHA.zip
 
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/ \
