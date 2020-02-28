@@ -45,12 +45,13 @@ RUN cd /syslog-plugin && go build \
 
 # https://github.com/pivotal/fluent-bit/releases/tag/v1.3.4
 ENV FLB_SHA 81e4d54
+ENV FLB_VERSION 81e4d54526b70250764063d24d47f0e952fed808
 ENV FLB_TARBALL https://github.com/pivotal/fluent-bit/archive/$FLB_SHA.zip
 
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/ \
     && wget -O "/tmp/fluent-bit-$FLB_SHA.zip" ${FLB_TARBALL} \
     && cd /tmp && unzip "fluent-bit-$FLB_SHA.zip" \
-    && cd "fluent-bit-$FLB_SHA"/build/ \
+    && cd "fluent-bit-$FLB_VERSION"/build/ \
     && cmake -DFLB_DEBUG=On \
     -DFLB_TRACE=Off \
     -DFLB_JEMALLOC=On \
