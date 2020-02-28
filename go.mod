@@ -20,3 +20,5 @@ require (
 )
 
 replace github.com/fluent/fluent-bit-go => github.com/wfernandes/fluent-bit-go v0.0.0-20190416184736-06ac16c1ccf5
+
+go 1.13

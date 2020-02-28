@@ -44,7 +44,7 @@ RUN cd /syslog-plugin && go build \
     cmd/main.go
 
 # https://github.com/pivotal/fluent-bit/releases/tag/v1.3.4
-ENV FLB_SHA 81e4d54526b70250764063d24d47f0e952fed808
+ENV FLB_SHA 81e4d54
 ENV FLB_TARBALL https://github.com/pivotal/fluent-bit/archive/$FLB_SHA.zip
 
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/ \
@@ -64,10 +64,10 @@ RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/ \
     && install bin/fluent-bit /fluent-bit/bin/ \
     && rm -rf /tmp/fluent-bit-*
 
-RUN echo "other:fluent-bit:${FLB_VERSION}:" >> /builder-dpkg-list
-RUN echo "    version: ${FLB_VERSION}" >> /builder-dpkg-list
+RUN echo "other:fluent-bit:${FLB_SHA}:" >> /builder-dpkg-list
+RUN echo "    version: ${FLB_SHA}" >> /builder-dpkg-list
 RUN echo "    name: fluent-bit" >> /builder-dpkg-list
-RUN echo "    url: https://codeload.github.com/fluent/fluent-bit/tar.gz/${FLB_VERSION}" >> /builder-dpkg-list
+RUN echo "    url: https://codeload.github.com/fluent/fluent-bit/tar.gz/${FLB_SHA}" >> /builder-dpkg-list
 RUN echo "    other-url: https://github.com/fluent/fluent-bit" >> /builder-dpkg-list
 RUN echo "    repository: Other" >> /builder-dpkg-list
 
