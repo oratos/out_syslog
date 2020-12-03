@@ -44,9 +44,9 @@ RUN cd /syslog-plugin && go build \
     cmd/main.go
 
 # https://github.com/pivotal/fluent-bit/releases/tag/v1.3.4
-ENV FLB_SHA 81e4d54
-ENV FLB_VERSION 81e4d54526b70250764063d24d47f0e952fed808
-ENV FLB_TARBALL https://github.com/pivotal/fluent-bit/archive/$FLB_SHA.zip
+ENV FLB_SHA 7587443
+ENV FLB_VERSION 7587443776aa2f10426b117b0d2841a58576b44d
+ENV FLB_TARBALL https://github.com/fluent/fluent-bit/archive/$FLB_SHA.zip
 
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/src/ \
     && wget -O "/tmp/fluent-bit-$FLB_SHA.zip" ${FLB_TARBALL} \
