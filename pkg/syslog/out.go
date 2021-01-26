@@ -235,6 +235,7 @@ func (s *Sink) write(w io.WriterTo) {
 			Msg:       err.Error(),
 			Timestamp: time.Now(),
 		})
+		log.Printf("[out_syslog] ERROR: Unable to Maintain Connection to %s: %s", s.Addr, err)
 		return
 	}
 	_ = s.conn.SetWriteDeadline(time.Now().Add(s.writeTimeout))
@@ -247,6 +248,7 @@ func (s *Sink) write(w io.WriterTo) {
 			Msg:       err.Error(),
 			Timestamp: time.Now(),
 		})
+		log.Printf("[out_syslog] ERROR: Unable to write a message to %s: %s", s.Addr, err)
 		return
 	}
 	s.writeErr.Store(SinkError{})
@@ -294,6 +296,7 @@ func tlsMaintainConn(s *Sink, out *Out) func() error {
 
 			if err == nil {
 				s.conn = conn
+				log.Printf("[out_syslog] Maintained TLS Connection to %s", s.Addr)
 			}
 			return err
 		}
@@ -310,6 +313,7 @@ func tcpMaintainConn(s *Sink, out *Out) func() error {
 			conn, err := dialer.Dial("tcp", s.Addr)
 			if err == nil {
 				s.conn = conn
+				log.Printf("[out_syslog] Maintained TCP Connection to %s", s.Addr)
 			}
 			return err
 		}
